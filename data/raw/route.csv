@@ -1,0 +1,6 @@
+route,from_stop,to_stop	distance (km),travel_time (min)
+special,B_zone,Green,3
+special,Green,SC2_SC3,2
+special,SC2_SC3,Health,3
+special,Health,Lecture_4, 2
+special,Lecture_4,B_zone,4 
