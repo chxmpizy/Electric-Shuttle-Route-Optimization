@@ -9,3 +9,4 @@ eclipse-sumo
 sumolib
 traci
 osmnx
+gym
