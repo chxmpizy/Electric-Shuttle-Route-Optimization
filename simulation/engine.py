@@ -1,7 +1,10 @@
 import random
+from simulation import Passenger
+from simulation import queues
+from simulation import Bus,buses
 
 def generate_passengers(current_time):
-    if random.random() < 0.5:  # เพิ่ม demand
+    if random.random() < 0.5:  
 
         origin = random.choice(stops)
         destination = random.choice(stops)

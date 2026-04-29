@@ -10,3 +10,4 @@ sumolib
 traci
 osmnx
 gym
+scikit-learn
