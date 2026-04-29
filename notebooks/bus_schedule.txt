@@ -1,162 +1,162 @@
 Route-5-Bus-1
-   Dorm            : 07:00
-   Lecture         : 07:05
-   Social          : 07:11
-   Convention      : 07:17
-   Dorm            : 07:23
+   Dorm            : 07:30
+   Lecture         : 07:35
+   Social          : 07:41
+   Convention      : 07:47
+   Dorm            : 07:53
 
 Route-5-Bus-2
-   Dorm            : 07:05
-   Lecture         : 07:11
-   Social          : 07:17
-   Convention      : 07:23
-   Dorm            : 07:28
+   Dorm            : 07:35
+   Lecture         : 07:41
+   Social          : 07:47
+   Convention      : 07:53
+   Dorm            : 07:58
 
 Route-5-Bus-3
-   Dorm            : 07:11
-   Lecture         : 07:17
-   Social          : 07:23
-   Convention      : 07:28
-   Dorm            : 07:34
+   Dorm            : 07:41
+   Lecture         : 07:47
+   Social          : 07:53
+   Convention      : 07:58
+   Dorm            : 08:04
 
 Route-5-Bus-4
-   Dorm            : 07:17
-   Lecture         : 07:23
-   Social          : 07:28
-   Convention      : 07:34
-   Dorm            : 07:40
+   Dorm            : 07:47
+   Lecture         : 07:53
+   Social          : 07:58
+   Convention      : 08:04
+   Dorm            : 08:10
 
 ======================================================================
 Route-13-Bus-1
-   Dorm            : 07:00
-   Library         : 07:03
-   SC1             : 07:06
-   Gate1           : 07:10
-   SC1             : 07:13
-   Library         : 07:16
-   Dorm            : 07:20
+   Dorm            : 07:30
+   Library         : 07:33
+   SC1             : 07:36
+   Gate1           : 07:40
+   SC1             : 07:43
+   Library         : 07:46
+   Dorm            : 07:50
 
 Route-13-Bus-2
-   Dorm            : 07:10
-   Library         : 07:13
-   SC1             : 07:16
-   Gate1           : 07:20
-   SC1             : 07:23
-   Library         : 07:26
-   Dorm            : 07:30
+   Dorm            : 07:40
+   Library         : 07:43
+   SC1             : 07:46
+   Gate1           : 07:50
+   SC1             : 07:53
+   Library         : 07:56
+   Dorm            : 08:00
 
 ======================================================================
 Route-6-Bus-1
-   Dorm            : 07:00
-   Convention      : 07:05
-   Social          : 07:11
-   Lecture         : 07:17
-   Dorm            : 07:23
+   Dorm            : 07:30
+   Convention      : 07:35
+   Social          : 07:41
+   Lecture         : 07:47
+   Dorm            : 07:53
 
 Route-6-Bus-2
-   Dorm            : 07:05
-   Convention      : 07:11
-   Social          : 07:17
-   Lecture         : 07:23
-   Dorm            : 07:28
+   Dorm            : 07:35
+   Convention      : 07:41
+   Social          : 07:47
+   Lecture         : 07:53
+   Dorm            : 07:58
 
 Route-6-Bus-3
-   Dorm            : 07:11
-   Convention      : 07:17
-   Social          : 07:23
-   Lecture         : 07:28
-   Dorm            : 07:34
+   Dorm            : 07:41
+   Convention      : 07:47
+   Social          : 07:53
+   Lecture         : 07:58
+   Dorm            : 08:04
 
 Route-6-Bus-4
-   Dorm            : 07:17
-   Convention      : 07:23
-   Social          : 07:28
-   Lecture         : 07:34
-   Dorm            : 07:40
+   Dorm            : 07:47
+   Convention      : 07:53
+   Social          : 07:58
+   Lecture         : 08:04
+   Dorm            : 08:10
 
 ======================================================================
 Route-3-Bus-1
-   Dorm            : 07:00
-   Green           : 07:04
-   SC2_SC3         : 07:08
-   Terminal        : 07:12
-   Convention      : 07:16
-   Dorm            : 07:21
+   Dorm            : 07:30
+   Green           : 07:34
+   SC2_SC3         : 07:38
+   Terminal        : 07:42
+   Convention      : 07:46
+   Dorm            : 07:51
 
 Route-3-Bus-2
-   Dorm            : 07:10
-   Green           : 07:14
-   SC2_SC3         : 07:18
-   Terminal        : 07:23
-   Convention      : 07:27
-   Dorm            : 07:31
+   Dorm            : 07:40
+   Green           : 07:44
+   SC2_SC3         : 07:48
+   Terminal        : 07:53
+   Convention      : 07:57
+   Dorm            : 08:01
 
 ======================================================================
 Route-2-Bus-1
-   Dorm            : 07:00
-   Lecture         : 07:04
-   Park            : 07:08
-   Health          : 07:12
-   Hospital        : 07:16
-   Convention      : 07:20
-   Dorm            : 07:25
+   Dorm            : 07:30
+   Lecture         : 07:34
+   Park            : 07:38
+   Health          : 07:42
+   Hospital        : 07:46
+   Convention      : 07:50
+   Dorm            : 07:55
 
 Route-2-Bus-2
-   Dorm            : 07:05
-   Lecture         : 07:09
-   Park            : 07:13
-   Health          : 07:17
-   Hospital        : 07:21
-   Convention      : 07:25
-   Dorm            : 07:30
+   Dorm            : 07:35
+   Lecture         : 07:39
+   Park            : 07:43
+   Health          : 07:47
+   Hospital        : 07:51
+   Convention      : 07:55
+   Dorm            : 08:00
 
 Route-2-Bus-3
-   Dorm            : 07:10
-   Lecture         : 07:14
-   Park            : 07:18
-   Health          : 07:22
-   Hospital        : 07:26
-   Convention      : 07:30
-   Dorm            : 07:35
+   Dorm            : 07:40
+   Lecture         : 07:44
+   Park            : 07:48
+   Health          : 07:52
+   Hospital        : 07:56
+   Convention      : 08:00
+   Dorm            : 08:05
 
 Route-2-Bus-4
-   Dorm            : 07:15
-   Lecture         : 07:19
-   Park            : 07:23
-   Health          : 07:27
-   Hospital        : 07:31
-   Convention      : 07:35
-   Dorm            : 07:40
+   Dorm            : 07:45
+   Lecture         : 07:49
+   Park            : 07:53
+   Health          : 07:57
+   Hospital        : 08:01
+   Convention      : 08:05
+   Dorm            : 08:10
 
 Route-2-Bus-5
-   Dorm            : 07:20
-   Lecture         : 07:24
-   Park            : 07:28
-   Health          : 07:32
-   Hospital        : 07:36
-   Convention      : 07:40
-   Dorm            : 07:45
+   Dorm            : 07:50
+   Lecture         : 07:54
+   Park            : 07:58
+   Health          : 08:02
+   Hospital        : 08:06
+   Convention      : 08:10
+   Dorm            : 08:15
 
 ======================================================================
 Route-7-Bus-1
-   Dorm            : 07:00
-   Green           : 07:03
-   SC2_SC3         : 07:07
-   Terminal        : 07:10
-   Dorm            : 07:14
+   Dorm            : 07:30
+   Green           : 07:33
+   SC2_SC3         : 07:37
+   Terminal        : 07:40
+   Dorm            : 07:44
 
 Route-7-Bus-2
-   Dorm            : 07:04
-   Green           : 07:08
-   SC2_SC3         : 07:11
-   Terminal        : 07:15
-   Dorm            : 07:18
+   Dorm            : 07:34
+   Green           : 07:38
+   SC2_SC3         : 07:41
+   Terminal        : 07:45
+   Dorm            : 07:48
 
 Route-7-Bus-3
-   Dorm            : 07:09
-   Green           : 07:12
-   SC2_SC3         : 07:16
-   Terminal        : 07:19
-   Dorm            : 07:23
+   Dorm            : 07:39
+   Green           : 07:42
+   SC2_SC3         : 07:46
+   Terminal        : 07:49
+   Dorm            : 07:53
 
 ======================================================================
