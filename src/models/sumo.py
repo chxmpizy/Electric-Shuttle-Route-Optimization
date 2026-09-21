@@ -125,8 +125,7 @@ def build_sumo_scenario(
         if stop_edges and "path" in route_data:
             for stop_name in route_data["path"]:
                 if stop_name in stop_edges:
-                    lane_id = stop_edges[stop_name]
-                    ET.SubElement(veh, "stop", lane=lane_id, duration="20")
+                    ET.SubElement(veh, "stop", busStop=f"busStop_{stop_name}", duration="15")
     _xml(root, routes_path)
 
     configuration = ET.Element("configuration")

@@ -80,16 +80,27 @@ for i, route in enumerate(schedule):
 for route in schedule:
     route["num_bus"] = 5
     
+
+add_root = ET.Element("additional")
 stop_edges_str = {}
-for k, v in stop_edges.items():
+for stop_name, edge_obj in stop_edges.items():
     best_lane = None
-    for lane in v.getLanes():
+    for lane in edge_obj.getLanes():
         if lane.allows("bus") or lane.allows("passenger"):
             best_lane = lane.getID()
             break
     if not best_lane:
-        best_lane = v.getLanes()[0].getID()
-    stop_edges_str[k] = best_lane
+        best_lane = edge_obj.getLanes()[0].getID()
+    stop_edges_str[stop_name] = best_lane
+    
+    # Calculate pos
+    edge_len = edge_obj.getLength()
+    start_pos = max(0, edge_len - 15)
+    end_pos = edge_len
+    ET.SubElement(add_root, "busStop", id=f"busStop_{stop_name}", lane=best_lane, startPos=f"{start_pos:.1f}", endPos=f"{end_pos:.1f}", name=stop_name)
+
+ET.ElementTree(add_root).write(out_dir / "bus_stops.add.xml", encoding="utf-8", xml_declaration=True)
+
 
 build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges, stop_edges=stop_edges_str)
 
@@ -99,7 +110,7 @@ root = tree.getroot()
 
 input_node = root.find("input")
 add_file = ET.SubElement(input_node, "additional-files")
-add_file.set("value", "thammasat.poly.xml")
+add_file.set("value", "thammasat.poly.xml,bus_stops.add.xml")
 
 gui_only = ET.SubElement(root, "gui_only")
 gui_settings = ET.SubElement(gui_only, "gui-settings-file")
