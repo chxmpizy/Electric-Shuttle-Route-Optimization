@@ -71,7 +71,9 @@ def _route_edges(route: dict[str, Any], leg_edges: dict[str, list[str]] | None) 
         key = f"{origin}->{destination}"
         if key not in leg_edges:
             raise ValueError(f"No physical edge mapping for route leg {key}.")
-        edges.extend(leg_edges[key])
+        for edge_id in leg_edges[key]:
+            if not edges or edges[-1] != edge_id:
+                edges.append(edge_id)
     return edges
 
 
@@ -94,7 +96,7 @@ def build_sumo_scenario(
     tripinfo_path = output_dir / "tripinfo.xml"
 
     root = ET.Element("routes")
-    ET.SubElement(root, "vType", id="ev_bus", vClass="bus", guiShape="bus", length="9.0", maxSpeed="11.11", personCapacity="30")
+    ET.SubElement(root, "vType", id="ev_bus", vClass="bus", guiShape="bus", length="9.0", maxSpeed="11.11", personCapacity="30", lcStrategic="2.0", lcCooperative="2.0")
     latest_end = 0.0
     vehicles: list[tuple[float, str, str, dict]] = []
     for route in schedule:
@@ -123,8 +125,7 @@ def build_sumo_scenario(
         if stop_edges and "path" in route_data:
             for stop_name in route_data["path"]:
                 if stop_name in stop_edges:
-                    edge_id = stop_edges[stop_name]
-                    lane_id = f"{edge_id}_0" if not edge_id.endswith("_0") else edge_id
+                    lane_id = stop_edges[stop_name]
                     ET.SubElement(veh, "stop", lane=lane_id, duration="20")
     _xml(root, routes_path)
 
@@ -137,6 +138,9 @@ def build_sumo_scenario(
     ET.SubElement(time, "begin", value=str(int(earliest_departure * 60)))
     ET.SubElement(time, "end", value=str(int((latest_end + 60) * 60)))
     ET.SubElement(time, "step-length", value="1")
+    
+    processing = ET.SubElement(configuration, "processing")
+    ET.SubElement(processing, "time-to-teleport", value="15")
     output = ET.SubElement(configuration, "output")
     ET.SubElement(output, "tripinfo-output", value=tripinfo_path.name)
     _xml(configuration, config_path)

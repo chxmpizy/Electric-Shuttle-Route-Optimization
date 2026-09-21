@@ -80,7 +80,17 @@ for i, route in enumerate(schedule):
 for route in schedule:
     route["num_bus"] = 5
     
-stop_edges_str = {k: v.getID() for k, v in stop_edges.items()}
+stop_edges_str = {}
+for k, v in stop_edges.items():
+    best_lane = None
+    for lane in v.getLanes():
+        if lane.allows("bus") or lane.allows("passenger"):
+            best_lane = lane.getID()
+            break
+    if not best_lane:
+        best_lane = v.getLanes()[0].getID()
+    stop_edges_str[k] = best_lane
+
 build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges, stop_edges=stop_edges_str)
 
 cfg_path = out_dir / "ev_bus.sumocfg"
