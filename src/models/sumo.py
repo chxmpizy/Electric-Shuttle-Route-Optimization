@@ -124,8 +124,9 @@ def build_sumo_scenario(
     input_element = ET.SubElement(configuration, "input")
     ET.SubElement(input_element, "net-file", value=str(network.resolve()))
     ET.SubElement(input_element, "route-files", value=routes_path.name)
+    earliest_departure = min([d for d, _, _ in vehicles], default=0) if vehicles else 0
     time = ET.SubElement(configuration, "time")
-    ET.SubElement(time, "begin", value="0")
+    ET.SubElement(time, "begin", value=str(int(earliest_departure * 60)))
     ET.SubElement(time, "end", value=str(int((latest_end + 60) * 60)))
     ET.SubElement(time, "step-length", value="1")
     output = ET.SubElement(configuration, "output")
