@@ -4,7 +4,6 @@ simpy
 matplotlib
 numpy
 jupyter
-sumo 
 eclipse-sumo
 sumolib
 traci
