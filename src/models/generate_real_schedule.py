@@ -95,9 +95,9 @@ for stop_name, edge_obj in stop_edges.items():
     
     # Calculate pos
     edge_len = edge_obj.getLength()
-    start_pos = max(0, edge_len - 15)
-    end_pos = edge_len
-    ET.SubElement(add_root, "busStop", id=f"busStop_{stop_name}", lane=best_lane, startPos=f"{start_pos:.1f}", endPos=f"{end_pos:.1f}", name=stop_name)
+    start_pos = max(0, edge_len - 16)
+    end_pos = max(1, edge_len - 1)
+    ET.SubElement(add_root, "busStop", id=f"busStop_{stop_name}", lane=best_lane, startPos=f"{start_pos:.2f}", endPos=f"{end_pos:.2f}", name=stop_name)
 
 ET.ElementTree(add_root).write(out_dir / "bus_stops.add.xml", encoding="utf-8", xml_declaration=True)
 
