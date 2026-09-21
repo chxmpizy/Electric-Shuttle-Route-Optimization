@@ -81,6 +81,7 @@ def build_sumo_scenario(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     *,
     leg_edges: dict[str, list[str]] | None = None,
+    stop_edges: dict[str, str] | None = None,
 ) -> ScenarioFiles:
     """Create route/configuration XML for a schedule expressed in minutes."""
     _require_sumo_network(network)
@@ -93,9 +94,9 @@ def build_sumo_scenario(
     tripinfo_path = output_dir / "tripinfo.xml"
 
     root = ET.Element("routes")
-    ET.SubElement(root, "vType", id="ev_bus", vClass="bus", guiShape="bus", color="255,165,0", length="9.0", maxSpeed="11.11", personCapacity="30")
+    ET.SubElement(root, "vType", id="ev_bus", vClass="bus", guiShape="bus", length="9.0", maxSpeed="11.11", personCapacity="30")
     latest_end = 0.0
-    vehicles: list[tuple[float, str, str]] = []
+    vehicles: list[tuple[float, str, str, dict]] = []
     for route in schedule:
         route_id = str(route.get("route_id", "route"))
         edges = _route_edges(route, leg_edges)
@@ -112,19 +113,26 @@ def build_sumo_scenario(
             for bus_index in range(buses):
                 bus_departure = departure + bus_index * headway
                 if bus_departure <= end:
-                    vehicles.append((bus_departure, f"ev_{route_id}_{trip}_{bus_index + 1}", sumo_route_id))
+                    vehicles.append((bus_departure, f"ev_{route_id}_{trip}_{bus_index + 1}", sumo_route_id, route))
             departure += headway
             trip += 1
         latest_end = max(latest_end, end)
-    for departure, vehicle_id, route_id in sorted(vehicles):
-        ET.SubElement(root, "vehicle", id=vehicle_id, type="ev_bus", route=route_id, depart=f"{departure * 60:.1f}")
+    for departure, vehicle_id, route_id, route_data in sorted(vehicles, key=lambda x: x[0]):
+        veh_color = route_data.get("color", "255,165,0")
+        veh = ET.SubElement(root, "vehicle", id=vehicle_id, type="ev_bus", route=route_id, depart=f"{departure * 60:.1f}", color=veh_color)
+        if stop_edges and "path" in route_data:
+            for stop_name in route_data["path"]:
+                if stop_name in stop_edges:
+                    edge_id = stop_edges[stop_name]
+                    lane_id = f"{edge_id}_0" if not edge_id.endswith("_0") else edge_id
+                    ET.SubElement(veh, "stop", lane=lane_id, duration="20")
     _xml(root, routes_path)
 
     configuration = ET.Element("configuration")
     input_element = ET.SubElement(configuration, "input")
     ET.SubElement(input_element, "net-file", value=str(network.resolve()))
     ET.SubElement(input_element, "route-files", value=routes_path.name)
-    earliest_departure = min([d for d, _, _ in vehicles], default=0) if vehicles else 0
+    earliest_departure = min([d for d, _, _, _ in vehicles], default=0) if vehicles else 0
     time = ET.SubElement(configuration, "time")
     ET.SubElement(time, "begin", value=str(int(earliest_departure * 60)))
     ET.SubElement(time, "end", value=str(int((latest_end + 60) * 60)))

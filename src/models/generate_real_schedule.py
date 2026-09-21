@@ -77,7 +77,11 @@ colors = ["0,100,220", "220,50,50", "50,220,50", "220,220,50", "220,0,220", "0,2
 for i, route in enumerate(schedule):
     route["color"] = colors[i % len(colors)]
 
-build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges)
+for route in schedule:
+    route["num_bus"] = 5
+    
+stop_edges_str = {k: v.getID() for k, v in stop_edges.items()}
+build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges, stop_edges=stop_edges_str)
 
 cfg_path = out_dir / "ev_bus.sumocfg"
 tree = ET.parse(cfg_path)
