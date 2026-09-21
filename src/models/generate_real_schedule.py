@@ -58,6 +58,20 @@ from models.sumo import build_sumo_scenario
 graph = make_bidirectional(build_graph())
 schedule = build_fixed_routes(graph)
 
+for route in schedule:
+    start = float(route["startTime"])
+    end = float(route["endTime"])
+    cycle_time = float(route["cycle_time"])
+    repeats = int((end - start) / max(1.0, cycle_time)) + 2
+    
+    path = route["path"]
+    if path[0] == path[-1]:
+        single_cycle = path[:-1]
+        route["path"] = single_cycle * repeats + [path[-1]]
+    else:
+        route["path"] = path * repeats
+
+
 leg_edges = {}
 for route in schedule:
     path = route["path"]

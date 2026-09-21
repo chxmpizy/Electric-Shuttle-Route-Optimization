@@ -110,14 +110,9 @@ def build_sumo_scenario(
         headway, buses = float(route["headway"]), int(route["num_bus"])
         if buses < 1 or headway <= 0 or end < start:
             raise ValueError(f"Route {route_id} has an invalid bus count, headway, or service window.")
-        departure, trip = start, 0
-        while departure <= end:
-            for bus_index in range(buses):
-                bus_departure = departure + bus_index * headway
-                if bus_departure <= end:
-                    vehicles.append((bus_departure, f"ev_{route_id}_{trip}_{bus_index + 1}", sumo_route_id, route))
-            departure += headway
-            trip += 1
+        for bus_index in range(buses):
+            bus_departure = start + bus_index * headway
+            vehicles.append((bus_departure, f"ev_{route_id}_{bus_index + 1}", sumo_route_id, route))
         latest_end = max(latest_end, end)
     for departure, vehicle_id, route_id, route_data in sorted(vehicles, key=lambda x: x[0]):
         veh_color = route_data.get("color", "255,165,0")
