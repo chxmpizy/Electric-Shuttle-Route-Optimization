@@ -8,22 +8,29 @@ models_dir = Path("src/models")
 out_dir = models_dir / "sumo_output"
 net_file = out_dir / "thammasat.net.xml"
 
-coordinates = {
-    "Dorm": (300, 500),
-    "Green": (500, 600),
-    "SC2_SC3": (1000, 800),
-    "Health": (2000, 400),
-    "Lecture": (1500, 600),
-    "Convention": (1200, 1300),
-    "Terminal": (1000, 1300),
-    "Library": (1300, 900),
-    "Hospital": (2200, 200),
-    "Park": (1600, 400),
-    "Dome": (800, 1500),
-    "Gate1": (1200, 1500),
-    "SC1": (1400, 1100),
-    "Social": (1600, 1000),
+# GPS Coordinates (Longitude, Latitude) for real-world bus stops
+gps_coordinates = {
+    "Dome": (100.59560, 14.07542),
+    "Hospital": (100.61500, 14.07720),
+    "Dorm": (100.60000, 14.06700),
+    "Gate1": (100.60750, 14.06650),
+    "Library": (100.60150, 14.07130),
+    "Park": (100.60200, 14.07250),
+    "SC1": (100.60500, 14.07200),
+    "SC2_SC3": (100.60400, 14.07000),
+    "Green": (100.59800, 14.06900),
+    "Convention": (100.60100, 14.06800),
+    "Terminal": (100.60700, 14.06900),
+    "Lecture": (100.60450, 14.07300),
+    "Health": (100.61300, 14.07600),
+    "Social": (100.59900, 14.07400),
 }
+
+
+net = sumolib.net.readNet(str(net_file))
+coordinates = {}
+for name, (lon, lat) in gps_coordinates.items():
+    coordinates[name] = net.convertLonLat2XY(lon, lat)
 
 def dist(x, y, shape):
     # min distance to polyline
@@ -56,7 +63,16 @@ from data.routes import build_fixed_routes
 from models.sumo import build_sumo_scenario
 
 graph = make_bidirectional(build_graph())
-schedule = build_fixed_routes(graph)
+
+import json
+if Path("best_schedule.json").exists():
+    print("Loading optimized schedule from best_schedule.json...")
+    with open("best_schedule.json", "r") as f:
+        schedule = json.load(f)
+else:
+    print("best_schedule.json not found. Using baseline schedule...")
+    schedule = build_fixed_routes(graph)
+
 
 for route in schedule:
     start = float(route["startTime"])

@@ -99,8 +99,8 @@ def build_sumo_scenario(
     ET.SubElement(root, "vType", id="ev_bus", vClass="bus", guiShape="bus", length="9.0", maxSpeed="11.11", personCapacity="30", lcStrategic="2.0", lcCooperative="2.0")
     latest_end = 0.0
     vehicles: list[tuple[float, str, str, dict]] = []
-    for route in schedule:
-        route_id = str(route.get("route_id", "route"))
+    for i, route in enumerate(schedule):
+        route_id = str(route.get("route_id", f"route_{i+1}"))
         edges = _route_edges(route, leg_edges)
         if not edges:
             raise ValueError(f"Route {route_id} has no SUMO edges.")

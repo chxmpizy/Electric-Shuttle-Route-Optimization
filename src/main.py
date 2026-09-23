@@ -59,6 +59,13 @@ def run_experiment(algorithm: str, trials: int, generations: int, plot: bool = T
         compare_result(before, avg_score)
         if best_history:
             plot_algorithm_history({algorithm.upper(): best_history, "BASELINE": [before]*len(best_history)})
+            
+    # Save the best schedule found
+    if best_solution:
+        best_sched = best_solution.schedule if hasattr(best_solution, "schedule") else best_solution
+        import json
+        with open("best_schedule.json", "w") as f:
+            json.dump(best_sched, f, indent=4)
         
     return best_solution, best_score, best_history, before
 
@@ -77,11 +84,22 @@ def main() -> None:
     if args.algorithm == "all":
         all_histories = {}
         baseline_val = None
+        global_best_score = float("inf")
+        global_best_sol = None
         for algo in ("ga", "sa", "pso", "aco"):
-            _, _, history, before = run_experiment(algo, trials=args.trials, generations=args.generations, plot=False)
+            best_sol, best_score, history, before = run_experiment(algo, trials=args.trials, generations=args.generations, plot=False)
             if history:
                 all_histories[algo.upper()] = history
+            if best_score < global_best_score:
+                global_best_score = best_score
+                global_best_sol = best_sol
             baseline_val = before
+            
+        if global_best_sol:
+            best_sched = global_best_sol.schedule if hasattr(global_best_sol, "schedule") else global_best_sol
+            import json
+            with open("best_schedule.json", "w") as f:
+                json.dump(best_sched, f, indent=4)
         
         if all_histories and baseline_val is not None:
             # Find max length to make the baseline line span the whole graph
