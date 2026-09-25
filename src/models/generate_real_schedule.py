@@ -3,6 +3,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import sumolib
 import math
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--prefix", default="ev_bus", help="Prefix for SUMO output files")
+parser.add_argument("--input", default="best_schedule.json", help="Path to schedule JSON")
+args, _ = parser.parse_known_args()
 
 models_dir = Path("src/models")
 out_dir = models_dir / "sumo_output"
@@ -65,12 +70,12 @@ from models.sumo import build_sumo_scenario
 graph = make_bidirectional(build_graph())
 
 import json
-if Path("best_schedule.json").exists():
-    print("Loading optimized schedule from best_schedule.json...")
-    with open("best_schedule.json", "r") as f:
+if Path(args.input).exists():
+    print(f"Loading optimized schedule from {args.input}...")
+    with open(args.input, "r") as f:
         schedule = json.load(f)
 else:
-    print("best_schedule.json not found. Using baseline schedule...")
+    print(f"{args.input} not found. Using baseline schedule...")
     schedule = build_fixed_routes(graph)
 
 
@@ -132,9 +137,9 @@ for stop_name, edge_obj in stop_edges.items():
 ET.ElementTree(add_root).write(out_dir / "bus_stops.add.xml", encoding="utf-8", xml_declaration=True)
 
 
-build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges, stop_edges=stop_edges_str)
+build_sumo_scenario(schedule, net_file, out_dir, leg_edges=leg_edges, stop_edges=stop_edges_str, prefix=args.prefix)
 
-cfg_path = out_dir / "ev_bus.sumocfg"
+cfg_path = out_dir / f"{args.prefix}.sumocfg"
 tree = ET.parse(cfg_path)
 root = tree.getroot()
 

@@ -83,7 +83,7 @@ def build_sumo_scenario(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     *,
     leg_edges: dict[str, list[str]] | None = None,
-    stop_edges: dict[str, str] | None = None,
+    stop_edges: dict[str, str] | None = None, prefix: str = 'ev_bus',
 ) -> ScenarioFiles:
     """Create route/configuration XML for a schedule expressed in minutes."""
     _require_sumo_network(network)
@@ -91,8 +91,8 @@ def build_sumo_scenario(
     if not schedule:
         raise ValueError("A SUMO scenario needs at least one route.")
     output_dir.mkdir(parents=True, exist_ok=True)
-    routes_path = output_dir / "ev_bus.rou.xml"
-    config_path = output_dir / "ev_bus.sumocfg"
+    routes_path = output_dir / f"{prefix}.rou.xml"
+    config_path = output_dir / f"{prefix}.sumocfg"
     tripinfo_path = output_dir / "tripinfo.xml"
 
     root = ET.Element("routes")
