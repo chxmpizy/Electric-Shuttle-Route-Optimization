@@ -1,0 +1,87 @@
+[
+    {
+        "path": [
+            "Convention",
+            "Social",
+            "Lecture",
+            "Dorm",
+            "Green"
+        ],
+        "num_bus": 2,
+        "cycle_time": 16,
+        "headway": 8.0,
+        "startTime": 467,
+        "endTime": 1260
+    },
+    {
+        "path": [
+            "Social",
+            "Lecture",
+            "Park",
+            "Health",
+            "Hospital"
+        ],
+        "num_bus": 2,
+        "cycle_time": 9,
+        "headway": 4.5,
+        "startTime": 450,
+        "endTime": 1125
+    },
+    {
+        "path": [
+            "Dome",
+            "Gate1",
+            "SC1",
+            "Library",
+            "Dorm"
+        ],
+        "num_bus": 6,
+        "cycle_time": 13,
+        "headway": 2.17,
+        "startTime": 390,
+        "endTime": 1255
+    },
+    {
+        "path": [
+            "Park",
+            "Health",
+            "Lecture",
+            "Convention",
+            "Terminal",
+            "SC2_SC3"
+        ],
+        "num_bus": 8,
+        "cycle_time": 7,
+        "headway": 0.88,
+        "startTime": 461,
+        "endTime": 1228
+    },
+    {
+        "path": [
+            "SC2_SC3",
+            "Terminal",
+            "Convention",
+            "Hospital",
+            "Health"
+        ],
+        "num_bus": 4,
+        "cycle_time": 10,
+        "headway": 2.5,
+        "startTime": 415,
+        "endTime": 1173
+    },
+    {
+        "path": [
+            "Social",
+            "Lecture",
+            "Dorm",
+            "Convention",
+            "Terminal"
+        ],
+        "num_bus": 4,
+        "cycle_time": 23,
+        "headway": 5.75,
+        "startTime": 451,
+        "endTime": 1260
+    }
+]

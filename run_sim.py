@@ -66,6 +66,7 @@ def print_comparison(base_metrics, opt_metrics, algo_name):
 
 def main():
     parser = argparse.ArgumentParser(description="Run Optimization & Simulation Viewer")
+    parser.add_argument("--no-gui", action="store_true", help="Skip launching SUMO GUI")
     parser.add_argument("--mode", choices=["baseline", "ga", "sa", "pso", "aco"], required=True, help="Mode to run")
     args = parser.parse_args()
 
@@ -104,9 +105,12 @@ def main():
     subprocess.run(cmd_gen, check=True)
     
     cfg_file = f"src/models/sumo_output/{args.mode}.sumocfg"
-    print(f"🖥️ Launching SUMO-GUI with {cfg_file}...")
-    cmd_sumo = ["sumo-gui", "-c", cfg_file]
-    subprocess.run(cmd_sumo)
+    if not args.no_gui:
+        print(f"🖥️ Launching SUMO-GUI with {cfg_file}...")
+        cmd_sumo = ["sumo-gui", "-c", cfg_file]
+        subprocess.run(cmd_sumo)
+    else:
+        print(f"✅ Files generated successfully for {args.mode}. (GUI skipped)")
 
 if __name__ == "__main__":
     main()
