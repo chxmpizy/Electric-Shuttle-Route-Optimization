@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import sys
 import json
 import subprocess
+import os
 from pathlib import Path
 from pydantic import BaseModel
+import traceback
 
 # Add src to python path
 sys.path.insert(0, str(Path("src").resolve()))
@@ -46,47 +48,62 @@ def get_baseline():
 @app.post("/api/run/{algorithm}", response_model=MetricsResponse)
 def run_algorithm(algorithm: str):
     algo = algorithm.lower()
-    if algo == "baseline":
-        opt_metrics, final_schedule = base_metrics, base_schedule
-    elif algo == "ga":
-        solution, _, _ = run_ga(ctx, generations=10)
-        opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
-    elif algo == "sa":
-        solution, _, _ = run_sa(ctx)
-        opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
-    elif algo == "pso":
-        solution, _, _ = run_pso(fixed_routes, ctx)
-        opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
-    elif algo == "aco":
-        solution, _, _ = run_aco(ctx, iterations=20, ants=10)
-        opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
-    else:
-        raise HTTPException(status_code=400, detail="Unknown algorithm")
+    try:
+        if algo == "baseline":
+            opt_metrics, final_schedule = base_metrics, base_schedule
+        elif algo == "ga":
+            solution, _, _ = run_ga(ctx, generations=10)
+            opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
+        elif algo == "sa":
+            solution, _, _ = run_sa(ctx)
+            opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
+        elif algo == "pso":
+            solution, _, _ = run_pso(fixed_routes, ctx)
+            opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
+        elif algo == "aco":
+            solution, _, _ = run_aco(ctx, iterations=20, ants=10)
+            opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
+        else:
+            raise HTTPException(status_code=400, detail="Unknown algorithm")
+            
+        # Generate files
+        json_path = f"{algo}_schedule.json"
+        with open(json_path, "w") as f:
+            json.dump(final_schedule, f, indent=4)
+            
+        cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(Path("src").resolve())
+        proc = subprocess.run(cmd_gen, capture_output=True, text=True, env=env)
+        if proc.returncode != 0:
+            print("ERROR generating SUMO schedule:", proc.stderr)
+            raise HTTPException(status_code=500, detail=f"Generation failed: {proc.stderr}")
         
-    # Generate files
-    json_path = f"{algo}_schedule.json"
-    with open(json_path, "w") as f:
-        json.dump(final_schedule, f, indent=4)
-        
-    cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
-    subprocess.run(cmd_gen, check=True)
-    
-    return MetricsResponse(
-        baseline_wait=base_metrics["avg_wait_time"],
-        baseline_travel=base_metrics["avg_travel_time"],
-        optimized_wait=opt_metrics["avg_wait_time"],
-        optimized_travel=opt_metrics["avg_travel_time"]
-    )
+        return MetricsResponse(
+            baseline_wait=base_metrics["avg_wait_time"],
+            baseline_travel=base_metrics["avg_travel_time"],
+            optimized_wait=opt_metrics["avg_wait_time"],
+            optimized_travel=opt_metrics["avg_travel_time"]
+        )
+    except Exception as e:
+        print(traceback.format_exc())
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/launch/{algorithm}")
 def launch_sumo(algorithm: str):
-    algo = algorithm.lower()
-    cfg_file = f"src/models/sumo_output/{algo}.sumocfg"
-    if not Path(cfg_file).exists():
-        raise HTTPException(status_code=404, detail="Config file not found. Run simulation first.")
-    
-    subprocess.Popen(["sumo-gui", "-c", cfg_file])
-    return {"message": "SUMO-GUI launched successfully"}
+    try:
+        algo = algorithm.lower()
+        cfg_file = f"src/models/sumo_output/{algo}.sumocfg"
+        if not Path(cfg_file).exists():
+            raise HTTPException(status_code=404, detail="Config file not found. Run simulation first.")
+        
+        subprocess.Popen(["sumo-gui", "-c", cfg_file])
+        return {"message": "SUMO-GUI launched successfully"}
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

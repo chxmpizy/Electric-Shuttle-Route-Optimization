@@ -6,30 +6,40 @@ export default function Home() {
   const [selectedMode, setSelectedMode] = useState<string>("baseline");
   const [loading, setLoading] = useState<boolean>(false);
   const [results, setResults] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const runSimulation = async () => {
     setLoading(true);
+    setErrorMsg(null);
+    setResults(null);
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/run/${selectedMode}`, {
         method: "POST",
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Unknown error from API");
+      }
       setResults(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to run simulation. Is the API server running?");
+      setErrorMsg(error.message || "Failed to run simulation. Is the API server running?");
     }
     setLoading(false);
   };
 
   const launchSumo = async () => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/launch/${selectedMode}`, {
+      const res = await fetch(`http://127.0.0.1:8000/api/launch/${selectedMode}`, {
         method: "POST",
       });
-    } catch (error) {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Unknown error from API");
+      }
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to launch SUMO. Is the API server running?");
+      alert(error.message || "Failed to launch SUMO. Is the API server running?");
     }
   };
 
@@ -81,6 +91,14 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* Error Display */}
+        {errorMsg && (
+          <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200 animate-in fade-in">
+            <h2 className="text-xl font-bold text-red-800 mb-2">❌ Error</h2>
+            <pre className="text-sm text-red-600 whitespace-pre-wrap font-mono bg-red-100 p-4 rounded-md">{errorMsg}</pre>
+          </div>
+        )}
 
         {/* Metrics Display */}
         {results && (
