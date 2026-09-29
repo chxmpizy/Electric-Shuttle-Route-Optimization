@@ -61,7 +61,7 @@ def run_algorithm(algorithm: str):
             solution, _, _ = run_pso(fixed_routes, ctx)
             opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
         elif algo == "aco":
-            solution, _, _ = run_aco(ctx, iterations=20, ants=10)
+            solution, _, _ = run_aco(ctx, iterations=20, num_ants=10)
             opt_metrics, final_schedule = get_simulation_metrics(solution, ctx)
         else:
             raise HTTPException(status_code=400, detail="Unknown algorithm")
