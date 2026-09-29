@@ -10,3 +10,4 @@ traci
 osmnx
 gym
 scikit-learn
+streamlit

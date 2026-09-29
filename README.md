@@ -1,78 +1,64 @@
-# UNIFLOW EV
+# 🚌 Electric Shuttle Route Optimization (TU Rangsit)
 
-ระบบต้นแบบสำหรับวิเคราะห์และปรับตารางรถ EV Shuttle ภายในมหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต โดยจำลองการรอรถ การขึ้น-ลงรถ และการเดินรถ จากนั้นค้นหาตารางที่เหมาะสมด้วย Metaheuristic Algorithms
+This project optimizes the electric shuttle bus routes and schedules at Thammasat University (Rangsit Campus) using Metaheuristic Algorithms and simulates the results visually using Eclipse SUMO.
 
-## ความสามารถ
+## 🌟 Features
+* **Metaheuristic Optimization**: Supports GA (Genetic Algorithm), SA (Simulated Annealing), PSO (Particle Swarm Optimization), and ACO (Ant Colony Optimization).
+* **Real GPS Coordinates**: Accurately maps 14 real-world campus stops using Latitude and Longitude.
+* **SUMO 2D Simulation**: Generates fully functioning `.rou.xml` and `.sumocfg` files to visualize exactly 5 buses looping per route continuously.
+* **Interactive Web Dashboard**: Built with Streamlit for comparing wait times, travel times, and easily launching the visual simulation.
 
-- สร้างกราฟจุดจอดและเส้นทางรถ EV 6 สาย
-- จำลองผู้โดยสาร คิว รถ ความจุ และช่วงเวลาให้บริการ
-- วัดเวลาเฉลี่ยในการรอรถและเวลาเฉลี่ยในการเดินทาง
-- เปรียบเทียบ GA, SA, PSO และ ACO กับ baseline schedule
-- สร้างไฟล์ SUMO สำหรับ visual simulation และเปิดดูผ่าน SUMO-GUI
+## ⚙️ Prerequisites
+1. **Python 3.10+**
+2. **Eclipse SUMO** (Must be installed and added to your system `PATH`)
 
-## โครงสร้าง
+## 🛠️ Installation
 
-```text
-data/raw/             ข้อมูลรถ ผู้โดยสาร และเส้นทาง
-notebooks/            การทดลองและตารางตัวอย่าง
-src/data/             โหลดข้อมูล กราฟ และเส้นทางฐาน
-src/simulation/       Discrete-event simulation
-src/optimization/     fitness, constraint และ evaluator
-src/algorithms/       GA, SA, PSO และ ACO
-src/models/           SUMO visual simulation
-src/visualization/    กราฟเส้นทางและการเปรียบเทียบผล
-src/main.py           จุดเริ่มรัน optimization
-```
-
-## ติดตั้ง
-
-ต้องใช้ Python 3.10 ขึ้นไป และติดตั้ง dependencies:
-
+1. **Clone the repository**
 ```bash
-python -m pip install -r requirements.txt
+git clone https://github.com/chxmpizy/Electric-Shuttle-Route-Optimization.git
+cd Electric-Shuttle-Route-Optimization
 ```
 
-สำหรับ SUMO visual simulation ให้ติดตั้ง Eclipse SUMO และตรวจว่า `sumo`, `sumo-gui` และ `netconvert` อยู่ใน `PATH`.
-
-## การรัน
-
-รันการทดลองขนาดเล็กด้วย PSO:
-
+2. **Set up a Virtual Environment (Optional but recommended)**
 ```bash
-PYTHONPATH=src python src/main.py --algorithm pso --trials 1
+python3 -m venv .venv
+source .venv/bin/activate  # Mac/Linux
+# .venv\Scripts\activate   # Windows
 ```
 
-เลือก algorithm ได้เป็น `ga`, `sa`, `pso`, `aco` หรือ `all`; สำหรับ GA สามารถลดจำนวนรอบได้:
-
+3. **Install Requirements**
 ```bash
-PYTHONPATH=src python src/main.py --algorithm ga --trials 1 --generations 5
+pip install -r requirements.txt
 ```
 
-รัน tests:
+## 🚀 Usage
 
+### 1. Web Dashboard (Recommended)
+You can use the interactive Streamlit dashboard to select algorithms, see metric improvements, and launch SUMO:
 ```bash
-PYTHONPATH=src python -m unittest discover -s src/test -v
+streamlit run app.py
 ```
+This will open a browser window at `http://localhost:8501`.
 
-## SUMO visual simulation
-
-สร้าง network ตัวอย่างและเปิด animation:
-
+### 2. Command Line Interface (CLI)
+If you prefer the terminal, you can use the unified launcher script:
 ```bash
-PYTHONPATH=src python -m models.sumo --demo --run --gui
+# Run Baseline
+python3 run_sim.py --mode baseline
+
+# Run Genetic Algorithm
+python3 run_sim.py --mode ga
+
+# Note: Add --no-gui if you want to skip launching the SUMO window.
 ```
 
-ไฟล์ที่สร้างอยู่ใน `src/models/sumo_output/`: SUMO network, route file, configuration และ `tripinfo.xml`.
+## 📂 Project Structure
+* `app.py`: Streamlit Web Dashboard entry point.
+* `run_sim.py`: Unified CLI launcher and comparison tool.
+* `src/algorithms/`: Contains the implementation of GA, SA, PSO, and ACO.
+* `src/data/`: Graph generation and baseline route definitions.
+* `src/models/`: Scripts to generate SUMO configuration files (`generate_real_schedule.py`, `sumo.py`).
+* `src/optimization/`: Evaluator and fitness functions to compute delays and travel times.
+* `src/simulation/`: Discrete-event Python simulation logic for rapid evaluation.
 
-ไฟล์ `src/models/map.osm.xml` เป็นข้อมูล OpenStreetMap ไม่ใช่ SUMO network โดยตรง แม้จะมีชื่อเดิมว่า `thammasat.net.xml`. เมื่อต้องการใช้แผนที่จริง ให้แปลงด้วย `netconvert` แล้วระบุ `sumo_edges` ซึ่งเป็นลำดับ edge ของ SUMO ให้แต่ละ route; ไม่ควรเดาชื่อ edge จากชื่อป้ายรถ.
-
-## สถานะข้อมูลและข้อจำกัด
-
-ตัวจำลองปัจจุบันมี demand model แบบสุ่มตามช่วงเวลาเร่งด่วน เพื่อใช้ทดสอบระบบก่อน ข้อมูลจริงใน `data/raw/student.csv` และ `data/raw/bus.csv` ยังต้องเติมก่อนใช้สรุปผลเชิงปฏิบัติการ. ขั้นตอนถัดไปคือแปลงตารางเรียนของนักศึกษาหอในเป็น passenger demand ตามเวลาและอาคารปลายทาง แล้วปรับเทียบความเร็ว ความจุ และเส้นทางกับข้อมูลหน้างาน.
-
-## Metrics
-
-- `avg_wait_time`: เวลาเฉลี่ยตั้งแต่มาถึงป้ายจนขึ้นรถ
-- `avg_travel_time`: เวลาเฉลี่ยหลังขึ้นรถจนลงปลายทาง
-- `served_passengers`: จำนวนผู้โดยสารที่ถึงปลายทาง
-- `waiting_passengers`: จำนวนผู้โดยสารที่ยังรอเมื่อสิ้นสุดการจำลอง
