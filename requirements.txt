@@ -11,3 +11,5 @@ osmnx
 gym
 scikit-learn
 streamlit
+fastapi
+uvicorn

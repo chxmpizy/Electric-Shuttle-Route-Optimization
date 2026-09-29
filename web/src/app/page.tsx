@@ -1,0 +1,148 @@
+"use client";
+
+import { useState } from "react";
+
+export default function Home() {
+  const [selectedMode, setSelectedMode] = useState<string>("baseline");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [results, setResults] = useState<any>(null);
+
+  const runSimulation = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/run/${selectedMode}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      setResults(data);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to run simulation. Is the API server running?");
+    }
+    setLoading(false);
+  };
+
+  const launchSumo = async () => {
+    try {
+      await fetch(`http://127.0.0.1:8000/api/launch/${selectedMode}`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to launch SUMO. Is the API server running?");
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50 text-gray-900 p-10 font-sans">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <header className="border-b pb-6">
+          <h1 className="text-4xl font-extrabold text-blue-700 tracking-tight">
+            🚌 Electric Shuttle Route Optimization
+          </h1>
+          <p className="mt-2 text-gray-600 text-lg">
+            Thammasat University Rangsit Campus - Metaheuristic Dashboard
+          </p>
+        </header>
+
+        {/* Controls */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center justify-between">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Optimization Algorithm
+            </label>
+            <select
+              className="w-full md:w-1/2 p-2 border rounded-md shadow-sm bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+              value={selectedMode}
+              onChange={(e) => setSelectedMode(e.target.value)}
+            >
+              <option value="baseline">Baseline (Fixed Routes)</option>
+              <option value="ga">Genetic Algorithm (GA)</option>
+              <option value="sa">Simulated Annealing (SA)</option>
+              <option value="pso">Particle Swarm Optimization (PSO)</option>
+              <option value="aco">Ant Colony Optimization (ACO)</option>
+            </select>
+          </div>
+          <div className="ml-6 space-x-4">
+            <button
+              onClick={runSimulation}
+              disabled={loading}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 transition"
+            >
+              {loading ? "Running Optimization..." : "🚀 Run Analysis"}
+            </button>
+            <button
+              onClick={launchSumo}
+              disabled={loading || !results}
+              className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50 transition"
+            >
+              🗺️ Open SUMO-GUI
+            </button>
+          </div>
+        </div>
+
+        {/* Metrics Display */}
+        {results && (
+          <div className="bg-white p-8 rounded-xl shadow-sm border space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">
+              📊 Performance Comparison: Baseline vs {selectedMode.toUpperCase()}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Wait Time Metric */}
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4">⏳ Avg Passenger Wait Time</h3>
+                <div className="flex justify-between text-gray-700 mb-2">
+                  <span>Baseline:</span>
+                  <span className="font-medium">{results.baseline_wait.toFixed(2)} mins</span>
+                </div>
+                <div className="flex justify-between text-blue-800 text-xl font-bold mb-2">
+                  <span>Optimized:</span>
+                  <span>{results.optimized_wait.toFixed(2)} mins</span>
+                </div>
+                {(() => {
+                  const diff = results.optimized_wait - results.baseline_wait;
+                  const pct = (diff / results.baseline_wait) * 100;
+                  const isImprovement = diff < 0;
+                  return (
+                    <div className={`mt-4 pt-4 border-t ${isImprovement ? 'border-green-200 text-green-700' : 'border-red-200 text-red-600'} font-semibold text-right`}>
+                      {diff > 0 ? '+' : ''}{diff.toFixed(2)} mins ({pct > 0 ? '+' : ''}{pct.toFixed(1)}%)
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Travel Time Metric */}
+              <div className="bg-purple-50 p-6 rounded-lg border border-purple-100">
+                <h3 className="text-lg font-semibold text-purple-900 mb-4">⏱️ Avg Travel Time</h3>
+                <div className="flex justify-between text-gray-700 mb-2">
+                  <span>Baseline:</span>
+                  <span className="font-medium">{results.baseline_travel.toFixed(2)} mins</span>
+                </div>
+                <div className="flex justify-between text-purple-800 text-xl font-bold mb-2">
+                  <span>Optimized:</span>
+                  <span>{results.optimized_travel.toFixed(2)} mins</span>
+                </div>
+                {(() => {
+                  const diff = results.optimized_travel - results.baseline_travel;
+                  const pct = (diff / results.baseline_travel) * 100;
+                  const isImprovement = diff < 0;
+                  return (
+                    <div className={`mt-4 pt-4 border-t ${isImprovement ? 'border-green-200 text-green-700' : 'border-red-200 text-red-600'} font-semibold text-right`}>
+                      {diff > 0 ? '+' : ''}{diff.toFixed(2)} mins ({pct > 0 ? '+' : ''}{pct.toFixed(1)}%)
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+            
+            <p className="text-gray-500 text-sm mt-4 text-center">
+              * Click 'Open SUMO-GUI' above to visualize the physical route simulation based on these results.
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

@@ -6,11 +6,12 @@ This project optimizes the electric shuttle bus routes and schedules at Thammasa
 * **Metaheuristic Optimization**: Supports GA (Genetic Algorithm), SA (Simulated Annealing), PSO (Particle Swarm Optimization), and ACO (Ant Colony Optimization).
 * **Real GPS Coordinates**: Accurately maps 14 real-world campus stops using Latitude and Longitude.
 * **SUMO 2D Simulation**: Generates fully functioning `.rou.xml` and `.sumocfg` files to visualize exactly 5 buses looping per route continuously.
-* **Interactive Web Dashboard**: Built with Streamlit for comparing wait times, travel times, and easily launching the visual simulation.
+* **Modern Web Dashboard**: Built with **Next.js** and **FastAPI** to easily run algorithms, view metric comparisons, and launch SUMO directly from the web!
 
 ## ⚙️ Prerequisites
 1. **Python 3.10+**
-2. **Eclipse SUMO** (Must be installed and added to your system `PATH`)
+2. **Node.js (npm)**
+3. **Eclipse SUMO** (Must be installed and added to your system `PATH`)
 
 ## 🛠️ Installation
 
@@ -20,45 +21,42 @@ git clone https://github.com/chxmpizy/Electric-Shuttle-Route-Optimization.git
 cd Electric-Shuttle-Route-Optimization
 ```
 
-2. **Set up a Virtual Environment (Optional but recommended)**
+2. **Set up Python Backend (FastAPI)**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # Mac/Linux
-# .venv\Scripts\activate   # Windows
-```
-
-3. **Install Requirements**
-```bash
 pip install -r requirements.txt
 ```
 
-## 🚀 Usage
-
-### 1. Web Dashboard (Recommended)
-You can use the interactive Streamlit dashboard to select algorithms, see metric improvements, and launch SUMO:
+3. **Set up Frontend (Next.js)**
 ```bash
-streamlit run app.py
+cd web
+npm install
+cd ..
 ```
-This will open a browser window at `http://localhost:8501`.
 
-### 2. Command Line Interface (CLI)
-If you prefer the terminal, you can use the unified launcher script:
+## 🚀 Usage (Web Dashboard)
+
+You need to run both the Python API and the Next.js frontend at the same time.
+
+**Terminal 1: Start Python API Server**
 ```bash
-# Run Baseline
-python3 run_sim.py --mode baseline
-
-# Run Genetic Algorithm
-python3 run_sim.py --mode ga
-
-# Note: Add --no-gui if you want to skip launching the SUMO window.
+# In the root directory
+source .venv/bin/activate
+python3 api_server.py
 ```
+
+**Terminal 2: Start Next.js Frontend**
+```bash
+cd web
+npm run dev
+```
+
+Finally, open your browser and go to `http://localhost:3000`. You can now run algorithms and click "Open SUMO-GUI" directly from the website!
 
 ## 📂 Project Structure
-* `app.py`: Streamlit Web Dashboard entry point.
-* `run_sim.py`: Unified CLI launcher and comparison tool.
+* `web/`: Next.js frontend dashboard.
+* `api_server.py`: FastAPI backend that bridges Python algorithms to Next.js.
 * `src/algorithms/`: Contains the implementation of GA, SA, PSO, and ACO.
 * `src/data/`: Graph generation and baseline route definitions.
 * `src/models/`: Scripts to generate SUMO configuration files (`generate_real_schedule.py`, `sumo.py`).
-* `src/optimization/`: Evaluator and fitness functions to compute delays and travel times.
-* `src/simulation/`: Discrete-event Python simulation logic for rapid evaluation.
-
