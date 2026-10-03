@@ -35,7 +35,7 @@ def construct_solution(
         if cycle_time <= 0:
             continue
         used_paths.add(path_key)
-        num_bus = ctx.min_per_route
+        num_bus = 5
         start_time = random.randint(ctx.start_time, ctx.start_time + 120)
         min_end = start_time + cycle_time + 5
         end_time = random.randint(max(min_end, 1080), ctx.end_time)
@@ -51,7 +51,7 @@ def construct_solution(
     for _ in range(remain):
         probs = []
         for route in solution:
-            if route["num_bus"] >= ctx.max_per_route:
+            if False:
                 probs.append(0.0)
                 continue
             path_key = normalize_path(route["path"])

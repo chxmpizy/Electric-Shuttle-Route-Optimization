@@ -48,7 +48,7 @@ def generate_random_route(
 def create_gene(stops: list[str], graph: nx.DiGraph) -> dict:
     path = generate_random_route(stops, graph)
     cycle_time = calculate_cycle_time(path, graph)
-    num_bus = random.randint(1, 5)
+    num_bus = 5
     start = random.randint(START_TIME, START_TIME + 120)
     end = random.randint(start + cycle_time, END_TIME)
     return {
@@ -85,7 +85,7 @@ def random_chromosome(ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(tuple(best_path))
         cycle_time = calculate_cycle_time(best_path, ctx.graph)
-        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
+        num_bus = 5
         start_time = random.randint(ctx.start_time, ctx.start_time + 120)
         end_time = random.randint(start_time + cycle_time + 5, ctx.end_time)
         chromosome.append({
@@ -109,7 +109,7 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
-        num_bus = max(ctx.min_per_route, min(ctx.max_per_route, gene["num_bus"]))
+        num_bus = 5
         start = max(ctx.start_time, gene["startTime"])
         end = min(ctx.end_time, gene["endTime"])
         if end <= start + cycle_time:
@@ -133,7 +133,7 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
-        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
+        num_bus = 5
         repaired.append({
             "path": path,
             "num_bus": num_bus,
@@ -186,7 +186,7 @@ def mutation(chromosome: list[dict], mutation_rate: float, ctx: RouteContext) ->
             child[idx]["cycle_time"] = cycle_time
             child[idx]["headway"] = round(cycle_time / num_bus, 2)
     elif move_type == "bus":
-        child[idx]["num_bus"] = random.randint(ctx.min_per_route, ctx.max_per_route)
+        child[idx]["num_bus"] = 5
         cycle_time = child[idx]["cycle_time"]
         num_bus = child[idx]["num_bus"]
         child[idx]["headway"] = round(cycle_time / num_bus, 2)

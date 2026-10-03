@@ -26,7 +26,7 @@ def discretize(position: list[float], fixed_routes: list[dict], ctx: RouteContex
     solution = []
     for i, route in enumerate(fixed_routes):
         num_bus = round(position[i * 2])
-        num_bus = max(ctx.min_per_route, min(ctx.max_per_route, num_bus))
+        num_bus = 5
         start_time = round(position[i * 2 + 1])
         base_start = route["startTime"]
         base_end = route["endTime"]
@@ -44,15 +44,6 @@ def discretize(position: list[float], fixed_routes: list[dict], ctx: RouteContex
             "startTime": start_time,
             "endTime": end_time,
         })
-    total_bus = sum(route["num_bus"] for route in solution)
-    while total_bus > ctx.total_buses:
-        idx = random.randint(0, len(solution) - 1)
-        if solution[idx]["num_bus"] > ctx.min_per_route:
-            solution[idx]["num_bus"] -= 1
-            total_bus -= 1
-            cycle_time = solution[idx]["cycle_time"]
-            num_bus = solution[idx]["num_bus"]
-            solution[idx]["headway"] = round(cycle_time / num_bus, 2)
     return repair(solution, ctx)
 def run_pso(
     fixed_routes: list[dict],

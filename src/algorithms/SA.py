@@ -31,25 +31,7 @@ def neighbor(solution: list[dict], ctx: RouteContext) -> list[dict]:
             "cycle_time": cycle_time,
             "headway": round(cycle_time / num_bus, 2),
         })
-    elif move_type == "bus":
-        candidates_from = [
-            i for i in range(len(new_sol))
-            if new_sol[i]["num_bus"] > ctx.min_per_route
-        ]
-        candidates_to = [
-            i for i in range(len(new_sol))
-            if new_sol[i]["num_bus"] < ctx.max_per_route
-        ]
-        if candidates_from and candidates_to:
-            i = random.choice(candidates_from)
-            j = random.choice(candidates_to)
-            if i != j:
-                new_sol[i]["num_bus"] -= 1
-                new_sol[j]["num_bus"] += 1
-                for k in (i, j):
-                    cycle_time = new_sol[k]["cycle_time"]
-                    num_bus = new_sol[k]["num_bus"]
-                    new_sol[k]["headway"] = round(cycle_time / num_bus, 2)
+    
     elif move_type == "time":
         shift = random.randint(-10, 10)
         new_start = max(ctx.start_time, min(ctx.end_time, new_sol[idx]["startTime"] + shift))
