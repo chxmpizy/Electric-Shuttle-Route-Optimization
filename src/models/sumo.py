@@ -134,7 +134,7 @@ def build_sumo_scenario(
     ET.SubElement(time, "step-length", value="1")
     
     processing = ET.SubElement(configuration, "processing")
-    ET.SubElement(processing, "time-to-teleport", value="15")
+    ET.SubElement(processing, "time-to-teleport", value="60")
     output = ET.SubElement(configuration, "output")
     ET.SubElement(output, "tripinfo-output", value=tripinfo_path.name)
     _xml(configuration, config_path)

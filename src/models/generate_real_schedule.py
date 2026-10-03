@@ -15,6 +15,7 @@ net_file = out_dir / "thammasat.net.xml"
 
 # GPS Coordinates (Longitude, Latitude) for real-world bus stops
 gps_coordinates = {
+    "Depot": (100.61550, 14.07750),
     "Dome": (100.59560, 14.07542),
     "Hospital": (100.61500, 14.07720),
     "Dorm": (100.60000, 14.06700),
@@ -88,9 +89,10 @@ for route in schedule:
     path = route["path"]
     if path[0] == path[-1]:
         single_cycle = path[:-1]
-        route["path"] = single_cycle * repeats + [path[-1]]
+        core = single_cycle * repeats + [path[-1]]
     else:
-        route["path"] = path * repeats
+        core = path * repeats
+    route["path"] = ["Depot"] + core + ["Depot"]
 
 
 leg_edges = {}
