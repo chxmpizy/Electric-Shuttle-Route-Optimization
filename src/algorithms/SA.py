@@ -12,7 +12,7 @@ def neighbor(solution: list[dict], ctx: RouteContext) -> list[dict]:
     if not new_sol:
         return new_sol
     idx = random.randint(0, len(new_sol) - 1)
-    move_type = random.choice(["route", "bus", "time"])
+    move_type = "route"
     if move_type == "route":
         new_path = None
         for _ in range(10):
@@ -31,9 +31,6 @@ def neighbor(solution: list[dict], ctx: RouteContext) -> list[dict]:
             "cycle_time": cycle_time,
             "headway": round(cycle_time / num_bus, 2),
         })
-    
-    
-        new_sol[idx]["startTime"] = new_start
     return repair(new_sol, ctx)
 def accept(old_score: float, new_score: float, temperature: float) -> bool:
     if new_score < old_score:
