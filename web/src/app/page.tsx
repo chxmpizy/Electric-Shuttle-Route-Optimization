@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 
+
+const formatTime = (minutes: number) => {
+  const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+  const m = Math.round(minutes % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+};
+
 export default function Home() {
   const [selectedMode, setSelectedMode] = useState<string>("baseline");
   const [loading, setLoading] = useState<boolean>(false);
@@ -167,6 +174,7 @@ export default function Home() {
                         <th className="p-3 border-b">Path (Stops)</th>
                         <th className="p-3 border-b text-center">Buses</th>
                         <th className="p-3 border-b text-center">Headway</th>
+                        <th className="p-3 border-b text-center">Operating Hours</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -189,6 +197,11 @@ export default function Home() {
                           </td>
                           <td className="p-3 text-center font-medium text-gray-700">{route.num_bus}</td>
                           <td className="p-3 text-center text-gray-700">{route.headway.toFixed(1)} mins</td>
+                          <td className="p-3 text-center text-gray-700">
+                            <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm whitespace-nowrap border">
+                              {formatTime(route.startTime)} - {formatTime(route.endTime)}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
