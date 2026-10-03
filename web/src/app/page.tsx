@@ -154,6 +154,48 @@ export default function Home() {
                 })()}
               </div>
             </div>
+
+            {/* Schedule Table Display */}
+            {results.schedule && results.schedule.length > 0 && (
+              <div className="mt-8 pt-6 border-t">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Optimized Route Schedule</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse rounded-lg overflow-hidden shadow-sm">
+                    <thead>
+                      <tr className="bg-gray-100 text-gray-700 text-sm uppercase tracking-wider">
+                        <th className="p-3 border-b">Route</th>
+                        <th className="p-3 border-b">Path (Stops)</th>
+                        <th className="p-3 border-b text-center">Buses</th>
+                        <th className="p-3 border-b text-center">Headway</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      {results.schedule.map((route: any, index: number) => (
+                        <tr key={index} className="border-b hover:bg-gray-50 transition">
+                          <td className="p-3 font-semibold text-gray-800 whitespace-nowrap">Route {index + 1}</td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {route.path.map((stop: string, i: number) => (
+                                <span key={i} className="flex items-center">
+                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded shadow-sm border border-blue-200">
+                                    {stop}
+                                  </span>
+                                  {i < route.path.length - 1 && (
+                                    <span className="text-gray-400 mx-1 text-xs">➔</span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="p-3 text-center font-medium text-gray-700">{route.num_bus}</td>
+                          <td className="p-3 text-center text-gray-700">{route.headway.toFixed(1)} mins</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             
             <p className="text-gray-500 text-sm mt-4 text-center">
               * Click 'Open SUMO-GUI' above to visualize the physical route simulation based on these results.

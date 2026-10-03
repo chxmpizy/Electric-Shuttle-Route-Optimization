@@ -37,6 +37,7 @@ class MetricsResponse(BaseModel):
     baseline_travel: float
     optimized_wait: float
     optimized_travel: float
+    schedule: list = []
 
 @app.get("/api/baseline")
 def get_baseline():
@@ -83,7 +84,8 @@ def run_algorithm(algorithm: str):
             baseline_wait=base_metrics["avg_wait_time"],
             baseline_travel=base_metrics["avg_travel_time"],
             optimized_wait=opt_metrics["avg_wait_time"],
-            optimized_travel=opt_metrics["avg_travel_time"]
+            optimized_travel=opt_metrics["avg_travel_time"],
+            schedule=final_schedule
         )
     except Exception as e:
         print(traceback.format_exc())
