@@ -32,12 +32,7 @@ def neighbor(solution: list[dict], ctx: RouteContext) -> list[dict]:
             "headway": round(cycle_time / num_bus, 2),
         })
     
-    elif move_type == "time":
-        shift = random.randint(-10, 10)
-        new_start = max(ctx.start_time, min(ctx.end_time, new_sol[idx]["startTime"] + shift))
-        cycle_time = new_sol[idx]["cycle_time"]
-        if new_sol[idx]["endTime"] <= new_start + cycle_time:
-            new_sol[idx]["endTime"] = new_start + cycle_time + 5
+    
         new_sol[idx]["startTime"] = new_start
     return repair(new_sol, ctx)
 def accept(old_score: float, new_score: float, temperature: float) -> bool:

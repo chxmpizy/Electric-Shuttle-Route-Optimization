@@ -49,8 +49,8 @@ def create_gene(stops: list[str], graph: nx.DiGraph) -> dict:
     path = generate_random_route(stops, graph)
     cycle_time = calculate_cycle_time(path, graph)
     num_bus = 5
-    start = random.randint(START_TIME, START_TIME + 120)
-    end = random.randint(start + cycle_time, END_TIME)
+    start = START_TIME
+    end = END_TIME
     return {
         "path": path,
         "num_bus": num_bus,
@@ -86,8 +86,8 @@ def random_chromosome(ctx: RouteContext) -> list[dict]:
         used_paths.add(tuple(best_path))
         cycle_time = calculate_cycle_time(best_path, ctx.graph)
         num_bus = 5
-        start_time = random.randint(ctx.start_time, ctx.start_time + 120)
-        end_time = random.randint(start_time + cycle_time + 5, ctx.end_time)
+        start_time = ctx.start_time
+        end_time = ctx.end_time
         chromosome.append({
             "path": best_path,
             "num_bus": num_bus,
@@ -110,10 +110,9 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
         num_bus = 5
-        start = max(ctx.start_time, gene["startTime"])
-        end = min(ctx.end_time, gene["endTime"])
-        if end <= start + cycle_time:
-            end = start + cycle_time + 5
+        start = ctx.start_time
+        end = ctx.end_time
+        
         if end > ctx.end_time:
             continue
         repaired.append({
@@ -139,7 +138,7 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             "num_bus": num_bus,
             "cycle_time": cycle_time,
             "headway": round(cycle_time / num_bus, 2),
-            "startTime": random.randint(ctx.start_time, ctx.start_time + 120),
+            "startTime": ctx.start_time,
             "endTime": ctx.end_time,
         })
     return repaired[:ctx.num_routes]
@@ -190,8 +189,7 @@ def mutation(chromosome: list[dict], mutation_rate: float, ctx: RouteContext) ->
         cycle_time = child[idx]["cycle_time"]
         num_bus = child[idx]["num_bus"]
         child[idx]["headway"] = round(cycle_time / num_bus, 2)
-    elif move_type == "time":
-        child[idx]["startTime"] += random.randint(-20, 20)
+    
     elif move_type == "replace_stop":
         path = child[idx]["path"]
         if len(path) > 4:

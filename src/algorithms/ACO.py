@@ -36,7 +36,7 @@ def construct_solution(
             continue
         used_paths.add(path_key)
         num_bus = 5
-        start_time = random.randint(ctx.start_time, ctx.start_time + 120)
+        start_time = ctx.start_time
         min_end = start_time + cycle_time + 5
         end_time = random.randint(max(min_end, 1080), ctx.end_time)
         solution.append({
