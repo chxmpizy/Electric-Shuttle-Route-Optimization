@@ -30,10 +30,9 @@ def discretize(position: list[float], fixed_routes: list[dict], ctx: RouteContex
         start_time = round(position[i * 2 + 1])
         base_start = route["startTime"]
         base_end = route["endTime"]
-        start_time = max(base_start, min(base_start + 60, start_time))
+        start_time = max(420, min(450, start_time))
         cycle_time = calculate_cycle_time(route["path"], ctx.graph)
-        end_time = max(start_time + cycle_time + 5, base_end)
-        end_time = min(ctx.end_time, end_time)
+        end_time = max(1080, min(1260, base_end))
         headway = round(cycle_time / num_bus, 2)
         solution.append({
             "route_id": route["route_id"],

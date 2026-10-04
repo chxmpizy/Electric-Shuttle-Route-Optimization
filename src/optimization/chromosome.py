@@ -49,8 +49,8 @@ def create_gene(stops: list[str], graph: nx.DiGraph) -> dict:
     path = generate_random_route(stops, graph)
     cycle_time = calculate_cycle_time(path, graph)
     num_bus = 5
-    start = START_TIME
-    end = END_TIME
+    start = random.randint(420, 450)
+    end = random.randint(1080, 1260)
     return {
         "path": path,
         "num_bus": num_bus,
@@ -86,8 +86,8 @@ def random_chromosome(ctx: RouteContext) -> list[dict]:
         used_paths.add(tuple(best_path))
         cycle_time = calculate_cycle_time(best_path, ctx.graph)
         num_bus = 5
-        start_time = ctx.start_time
-        end_time = ctx.end_time
+        start_time = random.randint(420, 450)
+        end_time = random.randint(1080, 1260)
         chromosome.append({
             "path": best_path,
             "num_bus": num_bus,
@@ -110,8 +110,8 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
         num_bus = 5
-        start = ctx.start_time
-        end = ctx.end_time
+        start = max(420, min(450, gene.get("startTime", 420)))
+        end = max(1080, min(1260, gene.get("endTime", 1260)))
         
         if end > ctx.end_time:
             continue
@@ -190,6 +190,14 @@ def mutation(chromosome: list[dict], mutation_rate: float, ctx: RouteContext) ->
         num_bus = child[idx]["num_bus"]
         child[idx]["headway"] = round(cycle_time / num_bus, 2)
     
+
+    elif move_type == "time":
+        shift_start = random.randint(-15, 15)
+        shift_end = random.randint(-30, 30)
+        new_start = child[idx].get("startTime", 420) + shift_start
+        new_end = child[idx].get("endTime", 1260) + shift_end
+        child[idx]["startTime"] = max(420, min(450, new_start))
+        child[idx]["endTime"] = max(1080, min(1260, new_end))
     elif move_type == "replace_stop":
         path = child[idx]["path"]
         if len(path) > 4:

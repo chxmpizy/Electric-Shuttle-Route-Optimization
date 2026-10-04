@@ -6,7 +6,7 @@ DATA_RAW_DIR = PROJECT_ROOT / "data" / "raw"
 ROUTE_CSV = DATA_RAW_DIR / "route.csv"
 
 # Simulation time window (minutes from midnight)
-START_TIME = 360   # 06:00
+START_TIME = 420   # 06:00
 END_TIME = 1260    # 21:00
 
 # Fleet constraints
