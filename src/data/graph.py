@@ -1,8 +1,8 @@
 """Campus transit graph construction and cycle-time utilities."""
 import networkx as nx
-def km_to_min(km: float, speed_kmh: float = 20.0) -> int:
+def km_to_min(km: float, speed_kmh: float = 50.0) -> float:
     """Convert distance (km) to travel time (minutes) at a given speed."""
-    return round(km * 60 / speed_kmh)
+    return round(km * 60 / speed_kmh, 2)
 def _add_route_edges(graph: nx.DiGraph, edges: list[tuple[str, str, float]]) -> None:
     for source, target, km in edges:
         graph.add_edge(source, target, weight=km_to_min(km))
@@ -43,16 +43,18 @@ def build_graph() -> nx.DiGraph:
         ("Park", "Lecture", 0.28),
         ("Lecture", "Convention", 0.15),
     ])
-    for source, target in [
-        ("Dome", "Gate1"), ("Gate1", "SC1"), ("SC1", "Library"),
-        ("Library", "Green"), ("Green", "Dorm"),
-    ]:
-        graph.add_edge(source, target, weight=3)
-    for source, target in [
-        ("Convention", "Social"), ("Social", "Lecture"), ("Lecture", "Park"),
-        ("Park", "Health"), ("Health", "Hospital"),
-    ]:
-        graph.add_edge(source, target, weight=3)
+    _add_route_edges(graph, [
+        (s, t, 1.0) for s, t in [
+            ("Dome", "Gate1"), ("Gate1", "SC1"), ("SC1", "Library"),
+            ("Library", "Green"), ("Green", "Dorm")
+        ]
+    ])
+    _add_route_edges(graph, [
+        (s, t, 1.0) for s, t in [
+            ("Convention", "Social"), ("Social", "Lecture"), ("Lecture", "Park"),
+            ("Park", "Health"), ("Health", "Hospital")
+        ]
+    ])
     return graph
 def make_bidirectional(graph: nx.DiGraph) -> nx.DiGraph:
     """Add reverse edges so routes can run in both directions."""
@@ -60,7 +62,7 @@ def make_bidirectional(graph: nx.DiGraph) -> nx.DiGraph:
     for source, target, data in edges:
         graph.add_edge(target, source, weight=data["weight"])
     return graph
-def calculate_cycle_time(route_path: list[str], graph: nx.DiGraph) -> int:
+def calculate_cycle_time(route_path: list[str], graph: nx.DiGraph) -> float:
     """Calculate total cycle time for a route path on the graph."""
     total_time = 0
     for i in range(len(route_path) - 1):
