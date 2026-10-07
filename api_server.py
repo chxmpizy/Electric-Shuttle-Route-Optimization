@@ -93,9 +93,9 @@ def run_algorithm(algorithm: str):
             
         # Generate files
         json_path = f"{algo}_schedule.json"
+        final_schedule = attach_timetable(final_schedule, ctx.graph)
         with open(json_path, "w") as f:
-            final_schedule = attach_timetable(final_schedule, ctx.graph)
-        json.dump(final_schedule, f, indent=4)
+            json.dump(final_schedule, f, indent=4)
             
         cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
         env = os.environ.copy()
