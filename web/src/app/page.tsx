@@ -185,14 +185,22 @@ export default function Home() {
                             <div className="flex flex-wrap gap-1 items-center">
                               {route.path.map((stop: string, i: number) => (
                                 <span key={i} className="flex items-center">
-                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded shadow-sm border border-blue-200">
-                                    {stop}
+                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded shadow-sm border border-blue-200 flex flex-col items-center">
+                                    <span>{stop}</span>
+                                    {route.timetable && route.timetable[i] && (
+                                      <span className="text-[10px] font-bold mt-0.5 text-blue-600 border-t border-blue-200 pt-0.5 w-full text-center">
+                                        {formatTime(route.timetable[i].arrival_time)}
+                                      </span>
+                                    )}
                                   </span>
                                   {i < route.path.length - 1 && (
                                     <span className="text-gray-400 mx-1 text-xs">➔</span>
                                   )}
                                 </span>
                               ))}
+                            </div>
+                            <div className="text-[11px] text-gray-500 mt-2">
+                              ⏱️ คันแรกถึงป้ายตามเวลาด้านบน และคันถัดไปจะมาถึงทุกๆ <span className="font-bold text-gray-700">{route.headway.toFixed(1)} นาที</span>
                             </div>
                           </td>
                           <td className="p-3 text-center font-medium text-gray-700">{route.num_bus}</td>

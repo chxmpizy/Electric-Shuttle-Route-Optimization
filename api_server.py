@@ -18,6 +18,30 @@ from algorithms.SA import run_sa
 from algorithms.PSO import run_pso
 from algorithms.ACO import run_aco
 
+
+import networkx as nx
+
+def attach_timetable(schedule, graph):
+    for route in schedule:
+        path = route["path"]
+        start_time = route.get("startTime", 420)
+        timetable = []
+        current_time = start_time
+        for i, stop in enumerate(path):
+            if i > 0:
+                prev_stop = path[i - 1]
+                try:
+                    travel_time = graph[prev_stop][stop]["weight"]
+                except KeyError:
+                    try:
+                        travel_time = nx.shortest_path_length(graph, prev_stop, stop, weight="weight")
+                    except Exception:
+                        travel_time = 3 # fallback
+                current_time += travel_time
+            timetable.append({"stop": stop, "arrival_time": current_time})
+        route["timetable"] = timetable
+    return schedule
+
 app = FastAPI(title="TU Shuttle Optimization API")
 
 # Enable CORS for Next.js frontend
@@ -70,7 +94,8 @@ def run_algorithm(algorithm: str):
         # Generate files
         json_path = f"{algo}_schedule.json"
         with open(json_path, "w") as f:
-            json.dump(final_schedule, f, indent=4)
+            final_schedule = attach_timetable(final_schedule, ctx.graph)
+        json.dump(final_schedule, f, indent=4)
             
         cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
         env = os.environ.copy()
