@@ -1,6 +1,23 @@
 """Discrete-event bus-passenger simulation engine."""
 import random
 
+STOP_WEIGHTS = {
+    'Dome': 81,
+    'Hospital': 200,
+    'Dorm': 2500,
+    'Gate1': 80,
+    'Library': 846,
+    'Park': 200,
+    'SC1': 600,
+    'SC2_SC3': 600,
+    'Green': 100,
+    'Convention': 150,
+    'Terminal': 212,
+    'Lecture': 1100,
+    'Health': 1023,
+    'Social': 1500,
+}
+
 from .Bus import Bus
 from .Passenger import Passenger
 def run_simulation(
@@ -44,10 +61,11 @@ def run_simulation(
         demand_prob = 0.8 if 7.5 <= hour < 10 or 11.5 <= hour < 13.5 else 0.25
         if random.random() >= demand_prob:
             return
-        origin = random.choice(stops)
-        destination = random.choice(stops)
+        weights_list = [STOP_WEIGHTS.get(s, 100) for s in stops]
+        origin = random.choices(stops, weights=weights_list, k=1)[0]
+        destination = random.choices(stops, weights=weights_list, k=1)[0]
         while destination == origin:
-            destination = random.choice(stops)
+            destination = random.choices(stops, weights=weights_list, k=1)[0]
         queues[origin].append(
             Passenger(origin=origin, destination=destination, arrival_time=t)
         )
