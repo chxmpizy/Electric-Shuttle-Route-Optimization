@@ -37,7 +37,8 @@ def attach_timetable(schedule, graph):
                         travel_time = nx.shortest_path_length(graph, prev_stop, stop, weight="weight")
                     except Exception:
                         travel_time = 3 # fallback
-                current_time += travel_time
+                # Add driving time + 1.5 mins dwell time from the previous stop
+                current_time += travel_time + 1.5
             timetable.append({"stop": stop, "arrival_time": current_time})
         route["timetable"] = timetable
     return schedule

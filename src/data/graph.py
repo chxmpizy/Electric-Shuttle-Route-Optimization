@@ -78,21 +78,28 @@ def make_bidirectional(graph: nx.DiGraph) -> nx.DiGraph:
         graph.add_edge(target, source, weight=data["weight"])
     return graph
 def calculate_cycle_time(route_path: list[str], graph: nx.DiGraph) -> float:
-    """Calculate total cycle time for a route path on the graph."""
-    total_time = 0
+    """Calculate total cycle time for a route path on the graph (including dwell & layover time)."""
+    driving_time = 0.0
     for i in range(len(route_path) - 1):
         current_stop = route_path[i]
         next_stop = route_path[i + 1]
         try:
-            total_time += graph[current_stop][next_stop]["weight"]
+            driving_time += graph[current_stop][next_stop]["weight"]
         except KeyError:
             try:
-                total_time += nx.shortest_path_length(
+                driving_time += nx.shortest_path_length(
                     graph,
                     source=current_stop,
                     target=next_stop,
                     weight="weight",
                 )
             except nx.NetworkXNoPath:
-                total_time += 999
-    return total_time
+                driving_time += 999
+                
+    # Realistic time factors
+    num_stops = len(route_path)
+    dwell_time_per_stop = 1.5  # 1.5 minutes for parking, boarding, and alighting per stop
+    layover_time = 5.0         # 5 minutes driver rest/buffer time at the end of the loop
+    
+    total_time = driving_time + (num_stops * dwell_time_per_stop) + layover_time
+    return round(total_time, 2)
