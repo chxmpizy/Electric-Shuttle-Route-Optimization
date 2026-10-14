@@ -17,6 +17,7 @@ from algorithms.GA import run_ga
 from algorithms.SA import run_sa
 from algorithms.PSO import run_pso
 from algorithms.ACO import run_aco
+from models.sumo import find_sumo_binary, get_sumo_env
 
 
 import networkx as nx
@@ -136,8 +137,8 @@ def run_algorithm(algorithm: str):
         with open(json_path, "w") as f:
             json.dump(final_schedule, f, indent=4)
             
-        cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
-        env = os.environ.copy()
+        cmd_gen = [sys.executable, "src/models/generate_real_schedule.py", "--prefix", algo, "--input", json_path]
+        env = get_sumo_env()
         env["PYTHONPATH"] = str(Path("src").resolve())
         proc = subprocess.run(cmd_gen, capture_output=True, text=True, env=env)
         if proc.returncode != 0:
@@ -168,10 +169,21 @@ def launch_sumo(algorithm: str):
         algo = algorithm.lower()
         cfg_file = f"src/models/sumo_output/{algo}.sumocfg"
         if not Path(cfg_file).exists():
-            raise HTTPException(status_code=404, detail="Config file not found. Run simulation first.")
+            raise HTTPException(status_code=404, detail=f"Config file for {algo} not found. Run simulation first.")
         
-        subprocess.Popen(["sumo-gui", "-c", cfg_file])
-        return {"message": "SUMO-GUI launched successfully"}
+        # Ensure XQuartz is running on macOS if present
+        if sys.platform == "darwin":
+            try:
+                x_check = subprocess.run(["pgrep", "-f", "X11.bin"], capture_output=True, text=True)
+                if x_check.returncode != 0:
+                    subprocess.run(["open", "-a", "/Applications/Utilities/XQuartz.app"], check=False)
+            except Exception:
+                pass
+
+        sumo_gui_bin = find_sumo_binary("sumo-gui")
+        env = get_sumo_env()
+        proc = subprocess.Popen([sumo_gui_bin, "-c", cfg_file], env=env)
+        return {"message": f"SUMO-GUI launched successfully for {algo.upper()}", "pid": proc.pid}
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

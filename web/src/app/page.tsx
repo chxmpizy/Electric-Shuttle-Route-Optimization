@@ -46,17 +46,20 @@ export default function Home() {
   // Initialize directly with GA comparison so graphs are immediately interactive on load
   const [results, setResults] = useState<SimulationResult | null>(() => getPrecomputedResult("ga"));
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [sumoStatus, setSumoStatus] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"network" | "metrics" | "benchmark" | "fleet" | "schedule">("network");
 
   const handleModeChange = (mode: string) => {
     setSelectedMode(mode);
     setResults(getPrecomputedResult(mode));
     setErrorMsg(null);
+    setSumoStatus(null);
   };
 
   const runSimulation = async () => {
     setLoading(true);
     setErrorMsg(null);
+    setSumoStatus(null);
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/run/${selectedMode}`, {
         method: "POST",
@@ -79,6 +82,10 @@ export default function Home() {
   };
 
   const launchSumo = async () => {
+    setSumoStatus({
+      type: "info",
+      msg: `กำลังเชื่อมต่อและเปิด SUMO-GUI สำหรับ ${selectedMode.toUpperCase()}...`,
+    });
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/launch/${selectedMode}`, {
         method: "POST",
@@ -87,10 +94,17 @@ export default function Home() {
       if (!res.ok) {
         throw new Error(data.detail || "Unknown error from API");
       }
+      setSumoStatus({
+        type: "success",
+        msg: `🎉 เปิด SUMO-GUI จำลองเส้นทาง (${selectedMode.toUpperCase()}) บนหน้าต่าง Desktop สำเร็จแล้ว! (กดปุ่ม Play สีเขียวบนหน้าต่าง SUMO เพื่อเริ่มเดินรถ)`,
+      });
     } catch (error: unknown) {
       console.error(error);
       const err = error as Error;
-      alert(err.message || "Failed to launch SUMO. Is the API server running?");
+      setSumoStatus({
+        type: "error",
+        msg: `❌ ไม่สามารถเปิด SUMO-GUI ได้: ${err.message} (กรุณาตรวจสอบว่าเปิด XQuartz และรัน api_server.py ไว้แล้ว)`,
+      });
     }
   };
 
@@ -184,6 +198,32 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* SUMO Status Banner */}
+        {sumoStatus && (
+          <div
+            className={`p-4 rounded-xl border text-sm flex items-start justify-between space-x-3 transition-all ${
+              sumoStatus.type === "success"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-950"
+                : sumoStatus.type === "error"
+                ? "bg-red-50 border-red-300 text-red-900"
+                : "bg-blue-50 border-blue-300 text-blue-900"
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">
+                {sumoStatus.type === "success" ? "🖥️" : sumoStatus.type === "error" ? "⚠️" : "⏳"}
+              </span>
+              <span>{sumoStatus.msg}</span>
+            </div>
+            <button
+              onClick={() => setSumoStatus(null)}
+              className="text-xs font-bold opacity-60 hover:opacity-100 px-2 py-0.5"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Notice / Error Display */}
         {errorMsg && (

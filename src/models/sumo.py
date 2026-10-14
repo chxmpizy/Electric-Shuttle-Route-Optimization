@@ -9,8 +9,10 @@ OpenStreetMap ``.net.xml`` and explicit SUMO edge sequences for each route.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,13 +49,56 @@ def _require_sumo_network(path: Path) -> None:
         )
 
 
-def _find_binary(name: str) -> str:
+def find_sumo_binary(name: str) -> str:
+    """Resolve a SUMO binary (sumo, sumo-gui, netconvert, etc.) robustly across PATH and venvs."""
+    # 1. Try PATH
     binary = shutil.which(name)
-    if not binary:
-        raise RuntimeError(
-            f"{name} was not found. Install Eclipse SUMO and add its bin directory to PATH."
-        )
-    return binary
+    if binary:
+        return binary
+
+    # 2. Try current python virtualenv bin
+    venv_bin = Path(sys.executable).parent / name
+    if venv_bin.exists():
+        return str(venv_bin)
+
+    # 3. Try python eclipse-sumo package bin
+    try:
+        import sumo
+        pkg_bin = Path(sumo.__file__).parent / "bin" / name
+        if pkg_bin.exists():
+            return str(pkg_bin)
+    except Exception:
+        pass
+
+    # 4. Try common system locations
+    for p in ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]:
+        candidate = Path(p) / name
+        if candidate.exists():
+            return str(candidate)
+
+    raise RuntimeError(
+        f"{name} was not found. Please install Eclipse SUMO or verify that .venv/bin is accessible."
+    )
+
+
+def get_sumo_env() -> dict[str, str]:
+    """Return an environment dict with SUMO_HOME and binary paths properly configured."""
+    env = os.environ.copy()
+    if "SUMO_HOME" not in env or not env["SUMO_HOME"]:
+        try:
+            import sumo
+            env["SUMO_HOME"] = sumo.SUMO_HOME
+        except Exception:
+            pass
+
+    venv_bin = str(Path(sys.executable).parent)
+    current_path = env.get("PATH", "")
+    if venv_bin not in current_path:
+        env["PATH"] = f"{venv_bin}:{current_path}"
+    return env
+
+
+_find_binary = find_sumo_binary
 
 
 def _route_edges(route: dict[str, Any], leg_edges: dict[str, list[str]] | None) -> list[str]:
@@ -164,7 +209,7 @@ def build_demo_network(output_dir: Path = DEFAULT_OUTPUT_DIR) -> tuple[Path, dic
         ET.SubElement(edges, "edge", id=edge_id, **{"from": origin, "to": destination}, speed="11.11", numLanes="1", priority="1")
         leg_edges[f"{origin}->{destination}"] = [edge_id]
     _xml(edges, edges_path)
-    subprocess.run([_find_binary("netconvert"), "--node-files", str(nodes_path), "--edge-files", str(edges_path), "--output-file", str(network_path)], check=True, capture_output=True, text=True)
+    subprocess.run([_find_binary("netconvert"), "--node-files", str(nodes_path), "--edge-files", str(edges_path), "--output-file", str(network_path)], check=True, capture_output=True, text=True, env=get_sumo_env())
     return network_path, leg_edges
 
 
@@ -173,7 +218,7 @@ def run_sumo(scenario: ScenarioFiles, *, gui: bool = False) -> subprocess.Comple
     command = [_find_binary("sumo-gui" if gui else "sumo"), "-c", str(scenario.config)]
     if not gui:
         command.extend(["--no-step-log", "true", "--duration-log.disable", "true"])
-    return subprocess.run(command, check=True, text=True)
+    return subprocess.run(command, check=True, text=True, env=get_sumo_env())
 
 
 def demo_scenario(output_dir: Path = DEFAULT_OUTPUT_DIR) -> ScenarioFiles:

@@ -13,6 +13,7 @@ from algorithms.GA import run_ga
 from algorithms.SA import run_sa
 from algorithms.PSO import run_pso
 from algorithms.ACO import run_aco
+from models.sumo import find_sumo_binary, get_sumo_env
 
 def get_simulation_metrics(chromosome, ctx):
     """Run simulation directly and return raw metrics."""
@@ -101,14 +102,26 @@ def main():
         json.dump(final_schedule, f, indent=4)
         
     print(f"\n⚙️ Generating SUMO scenario files for {args.mode}...")
-    cmd_gen = ["python3", "src/models/generate_real_schedule.py", "--prefix", args.mode, "--input", json_path]
-    subprocess.run(cmd_gen, check=True)
+    cmd_gen = [sys.executable, "src/models/generate_real_schedule.py", "--prefix", args.mode, "--input", json_path]
+    env = get_sumo_env()
+    env["PYTHONPATH"] = str(Path("src").resolve())
+    subprocess.run(cmd_gen, check=True, env=env)
     
     cfg_file = f"src/models/sumo_output/{args.mode}.sumocfg"
     if not args.no_gui:
+        # Ensure XQuartz is running on macOS
+        if sys.platform == "darwin":
+            try:
+                x_check = subprocess.run(["pgrep", "-f", "X11.bin"], capture_output=True, text=True)
+                if x_check.returncode != 0:
+                    subprocess.run(["open", "-a", "/Applications/Utilities/XQuartz.app"], check=False)
+            except Exception:
+                pass
+
         print(f"🖥️ Launching SUMO-GUI with {cfg_file}...")
-        cmd_sumo = ["sumo-gui", "-c", cfg_file]
-        subprocess.run(cmd_sumo)
+        sumo_gui_bin = find_sumo_binary("sumo-gui")
+        cmd_sumo = [sumo_gui_bin, "-c", cfg_file]
+        subprocess.run(cmd_sumo, env=env)
     else:
         print(f"✅ Files generated successfully for {args.mode}. (GUI skipped)")
 
