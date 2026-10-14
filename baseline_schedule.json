@@ -1,0 +1,254 @@
+[
+    {
+        "route_id": 1,
+        "path": [
+            "Convention",
+            "Terminal",
+            "SC2_SC3",
+            "Library",
+            "Dorm",
+            "Convention"
+        ],
+        "num_bus": 5,
+        "cycle_time": 17.06,
+        "headway": 3.41,
+        "startTime": 420,
+        "endTime": 1250,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 420
+            },
+            {
+                "stop": "Terminal",
+                "arrival_time": 422.52
+            },
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 424.54999999999995
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 426.53
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 428.82
+            },
+            {
+                "stop": "Convention",
+                "arrival_time": 430.56
+            }
+        ]
+    },
+    {
+        "route_id": 2,
+        "path": [
+            "Convention",
+            "Dorm",
+            "Library",
+            "SC2_SC3",
+            "Terminal",
+            "Convention"
+        ],
+        "num_bus": 5,
+        "cycle_time": 17.06,
+        "headway": 3.41,
+        "startTime": 410,
+        "endTime": 1290,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 410
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 411.74
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 414.03000000000003
+            },
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 416.01000000000005
+            },
+            {
+                "stop": "Terminal",
+                "arrival_time": 418.04
+            },
+            {
+                "stop": "Convention",
+                "arrival_time": 420.56
+            }
+        ]
+    },
+    {
+        "route_id": 3,
+        "path": [
+            "Convention",
+            "Hospital",
+            "Health",
+            "Park",
+            "Lecture",
+            "Convention"
+        ],
+        "num_bus": 5,
+        "cycle_time": 20.68,
+        "headway": 4.14,
+        "startTime": 400,
+        "endTime": 1295,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 400
+            },
+            {
+                "stop": "Hospital",
+                "arrival_time": 404.35
+            },
+            {
+                "stop": "Health",
+                "arrival_time": 406.25
+            },
+            {
+                "stop": "Park",
+                "arrival_time": 409.7
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 411.63
+            },
+            {
+                "stop": "Convention",
+                "arrival_time": 414.18
+            }
+        ]
+    },
+    {
+        "route_id": 4,
+        "path": [
+            "Dome",
+            "Gate1",
+            "SC1",
+            "Library",
+            "Green",
+            "Dorm"
+        ],
+        "num_bus": 5,
+        "cycle_time": 19.36,
+        "headway": 3.87,
+        "startTime": 420,
+        "endTime": 1295,
+        "timetable": [
+            {
+                "stop": "Dome",
+                "arrival_time": 420
+            },
+            {
+                "stop": "Gate1",
+                "arrival_time": 424.03
+            },
+            {
+                "stop": "SC1",
+                "arrival_time": 426.57
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 428.67
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 430.88
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 432.86
+            }
+        ]
+    },
+    {
+        "route_id": 5,
+        "path": [
+            "Convention",
+            "Social",
+            "Lecture",
+            "Park",
+            "Health",
+            "Hospital"
+        ],
+        "num_bus": 5,
+        "cycle_time": 18.81,
+        "headway": 3.76,
+        "startTime": 420,
+        "endTime": 1080,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 420
+            },
+            {
+                "stop": "Social",
+                "arrival_time": 422.59
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 425.03
+            },
+            {
+                "stop": "Park",
+                "arrival_time": 426.96
+            },
+            {
+                "stop": "Health",
+                "arrival_time": 430.40999999999997
+            },
+            {
+                "stop": "Hospital",
+                "arrival_time": 432.30999999999995
+            }
+        ]
+    },
+    {
+        "route_id": 6,
+        "path": [
+            "Dorm",
+            "Green",
+            "SC2_SC3",
+            "Health",
+            "Lecture",
+            "Dorm"
+        ],
+        "num_bus": 5,
+        "cycle_time": 20.15,
+        "headway": 4.03,
+        "startTime": 450,
+        "endTime": 1300,
+        "timetable": [
+            {
+                "stop": "Dorm",
+                "arrival_time": 450
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 451.98
+            },
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 454.5
+            },
+            {
+                "stop": "Health",
+                "arrival_time": 457.84
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 460.85999999999996
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 463.65
+            }
+        ]
+    }
+]

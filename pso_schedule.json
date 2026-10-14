@@ -11,7 +11,7 @@
         "num_bus": 5,
         "cycle_time": 16,
         "headway": 3.2,
-        "startTime": 422,
+        "startTime": 450,
         "endTime": 1260
     },
     {
@@ -23,25 +23,57 @@
             "Health",
             "Hospital"
         ],
-        "num_bus": 1,
+        "num_bus": 5,
         "cycle_time": 12,
-        "headway": 12.0,
-        "startTime": 422,
+        "headway": 2.4,
+        "startTime": 450,
         "endTime": 1080
     },
     {
         "path": [
+            "Hospital",
             "Health",
-            "Park",
             "Lecture",
-            "Social",
-            "Convention",
-            "Dorm"
+            "Dorm",
+            "Green",
+            "Library",
+            "SC2_SC3"
         ],
         "num_bus": 5,
         "cycle_time": 20,
         "headway": 4.0,
-        "startTime": 408,
+        "startTime": 420,
+        "endTime": 1260
+    },
+    {
+        "path": [
+            "Dorm",
+            "Green",
+            "SC2_SC3",
+            "Terminal",
+            "Convention"
+        ],
+        "num_bus": 5,
+        "cycle_time": 11,
+        "headway": 2.2,
+        "startTime": 420,
+        "endTime": 1260
+    },
+    {
+        "path": [
+            "Convention",
+            "Social",
+            "Lecture",
+            "Dorm",
+            "Library",
+            "Green",
+            "SC2_SC3",
+            "Terminal"
+        ],
+        "num_bus": 5,
+        "cycle_time": 23,
+        "headway": 4.6,
+        "startTime": 420,
         "endTime": 1260
     },
     {
@@ -50,44 +82,12 @@
             "Lecture",
             "Health",
             "Hospital",
-            "Convention",
-            "Dorm",
-            "Green",
-            "SC2_SC3"
+            "Convention"
         ],
-        "num_bus": 1,
-        "cycle_time": 27,
-        "headway": 27.0,
-        "startTime": 454,
-        "endTime": 1260
-    },
-    {
-        "path": [
-            "Gate1",
-            "SC1",
-            "Library",
-            "Dorm",
-            "Convention",
-            "Terminal"
-        ],
-        "num_bus": 6,
-        "cycle_time": 24,
-        "headway": 4.0,
-        "startTime": 385,
-        "endTime": 1260
-    },
-    {
-        "path": [
-            "Green",
-            "Dorm",
-            "Library",
-            "SC2_SC3",
-            "Terminal"
-        ],
-        "num_bus": 4,
-        "cycle_time": 12,
-        "headway": 3.0,
-        "startTime": 436,
+        "num_bus": 5,
+        "cycle_time": 10,
+        "headway": 2.0,
+        "startTime": 420,
         "endTime": 1260
     }
 ]

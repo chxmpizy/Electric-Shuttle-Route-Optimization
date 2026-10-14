@@ -60,16 +60,54 @@ base_metrics, base_schedule = get_simulation_metrics(fixed_routes, ctx)
 class MetricsResponse(BaseModel):
     baseline_wait: float
     baseline_travel: float
+    baseline_served: int | None = 0
+    baseline_waiting: int | None = 0
+    baseline_schedule: list = []
     optimized_wait: float
     optimized_travel: float
+    optimized_served: int | None = 0
+    optimized_waiting: int | None = 0
     schedule: list = []
+
+# Pre-attach timetable to base schedule
+base_schedule_with_timetable = attach_timetable(base_schedule, ctx.graph)
 
 @app.get("/api/baseline")
 def get_baseline():
     return {
         "wait_time": base_metrics["avg_wait_time"],
-        "travel_time": base_metrics["avg_travel_time"]
+        "travel_time": base_metrics["avg_travel_time"],
+        "served": base_metrics.get("served_passengers", 0),
+        "waiting": base_metrics.get("waiting_passengers", 0),
+        "schedule": base_schedule_with_timetable
     }
+
+@app.get("/api/benchmark")
+def get_benchmark():
+    algos = ["baseline", "ga", "sa", "pso", "aco"]
+    benchmark_data = {}
+    for a in algos:
+        json_path = f"{a}_schedule.json"
+        if Path(json_path).exists():
+            try:
+                with open(json_path) as f:
+                    sched = json.load(f)
+                metrics, _ = get_simulation_metrics(sched, ctx)
+                benchmark_data[a] = {
+                    "algorithm": a.upper(),
+                    "wait_time": metrics["avg_wait_time"],
+                    "travel_time": metrics["avg_travel_time"],
+                    "total_time": round(metrics["avg_wait_time"] + metrics["avg_travel_time"], 2),
+                    "served": metrics.get("served_passengers", 0),
+                    "waiting": metrics.get("waiting_passengers", 0),
+                    "num_routes": len(sched),
+                    "total_buses": sum(r.get("num_bus", 0) for r in sched),
+                    "avg_headway": round(sum(r.get("headway", 0) for r in sched) / max(1, len(sched)), 2),
+                    "schedule": sched
+                }
+            except Exception as e:
+                print(f"Error benchmark {a}: {e}")
+    return benchmark_data
 
 @app.post("/api/run/{algorithm}", response_model=MetricsResponse)
 def run_algorithm(algorithm: str):
@@ -109,8 +147,13 @@ def run_algorithm(algorithm: str):
         return MetricsResponse(
             baseline_wait=base_metrics["avg_wait_time"],
             baseline_travel=base_metrics["avg_travel_time"],
+            baseline_served=base_metrics.get("served_passengers", 0),
+            baseline_waiting=base_metrics.get("waiting_passengers", 0),
+            baseline_schedule=base_schedule_with_timetable,
             optimized_wait=opt_metrics["avg_wait_time"],
             optimized_travel=opt_metrics["avg_travel_time"],
+            optimized_served=opt_metrics.get("served_passengers", 0),
+            optimized_waiting=opt_metrics.get("waiting_passengers", 0),
             schedule=final_schedule
         )
     except Exception as e:

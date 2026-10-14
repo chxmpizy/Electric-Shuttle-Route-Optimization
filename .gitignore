@@ -1,6 +1,27 @@
-**/.DS_store
+# OS and Editor
+.DS_Store
+**/.DS_Store
 **/.ipynb_checkpoints
 **/.vscode
+**/.idea
+
+# Python
 **/__pycache__
+*.pyc
+*.pyo
+.venv/
+.venv-sumo/
 .env
+
+# Logs and outputs
+*.log
+*_log.txt
+*_output.txt
+
+# Agent configs
+.agents/
+.claude/
+.archify/
+
+# SUMO simulation artifacts
 src/models/sumo_output/
