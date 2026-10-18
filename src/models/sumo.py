@@ -51,30 +51,33 @@ def _require_sumo_network(path: Path) -> None:
 
 def find_sumo_binary(name: str) -> str:
     """Resolve a SUMO binary (sumo, sumo-gui, netconvert, etc.) robustly across PATH and venvs."""
-    # 1. Try PATH
-    binary = shutil.which(name)
-    if binary:
-        return binary
-
-    # 2. Try current python virtualenv bin
-    venv_bin = Path(sys.executable).parent / name
-    if venv_bin.exists():
-        return str(venv_bin)
-
-    # 3. Try python eclipse-sumo package bin
+    # 1. Prioritize native compiled binary in eclipse-sumo package
     try:
         import sumo
         pkg_bin = Path(sumo.__file__).parent / "bin" / name
-        if pkg_bin.exists():
+        if pkg_bin.exists() and os.access(pkg_bin, os.X_OK):
             return str(pkg_bin)
     except Exception:
         pass
 
+    # 2. Try current python virtualenv bin
+    venv_bin = Path(sys.executable).parent / name
+    if venv_bin.exists() and os.access(venv_bin, os.X_OK):
+        return str(venv_bin)
+
+    # 3. Try PATH (excluding broken anaconda wrappers)
+    binary = shutil.which(name)
+    if binary and "anaconda" not in binary:
+        return binary
+
     # 4. Try common system locations
     for p in ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]:
         candidate = Path(p) / name
-        if candidate.exists():
+        if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
+
+    if binary:
+        return binary
 
     raise RuntimeError(
         f"{name} was not found. Please install Eclipse SUMO or verify that .venv/bin is accessible."

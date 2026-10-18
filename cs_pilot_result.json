@@ -1,0 +1,48 @@
+{
+  "avg_wait_time": 1.32,
+  "avg_travel_time": 16.33,
+  "total_passengers": 320,
+  "served_passengers": 320,
+  "stranded_passengers": 0,
+  "waiting_passengers": 0,
+  "passengers_with_class": 320,
+  "on_time_passengers": 236,
+  "late_passengers": 84,
+  "on_time_rate_pct": 73.75,
+  "avg_delay_minutes": 2.5,
+  "max_delay_minutes": 7.0,
+  "fitness_breakdown": {
+    "wait_component": 0.0176,
+    "travel_component": 0.1225,
+    "delay_component": 0.0875,
+    "unserved_penalty": 0.0,
+    "fleet_component": 0.0,
+    "total_cost": 0.2276,
+    "on_time_rate_pct": 73.75,
+    "unserved_ratio_pct": 0.0
+  },
+  "demand_stats": {
+    "total_passengers": 320,
+    "unique_courses": 4,
+    "by_destination_stop": {
+      "Lecture": 240,
+      "SC2_SC3": 80
+    },
+    "by_class_hour": {
+      "8": 80,
+      "9": 80,
+      "11": 80,
+      "13": 80
+    },
+    "by_course": {
+      "CS100": 80,
+      "CS101": 80,
+      "CS102": 80,
+      "ST216": 80
+    },
+    "time_range_min": [
+      450.0,
+      790.0
+    ]
+  }
+}
