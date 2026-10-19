@@ -14,7 +14,7 @@ cs_benchmark.py
 
 รัน: python cs_benchmark.py
 """
-import sys, os, time, json, random, copy
+import sys, os, time, json, random, copy, platform
 sys.path.insert(0, "src")
 
 from pathlib import Path
@@ -73,6 +73,9 @@ ctx = RouteContext(
     total_buses=30,
     start_time=420,
     end_time=sim_time,
+    # Feedback #7: ให้ลูปค้นหาเห็น demand จริงเหมือนตอน eval สุดท้าย (fair comparison)
+    passenger_demands=demands,
+    eval_seed=42,
 )
 
 print(f"  ผู้โดยสาร CS : {stats['total_passengers']:,} คน "
@@ -96,6 +99,9 @@ def eval_full(chromosome: list[dict]) -> dict:
     )
     score = fitness(result, total_buses=total_buses)
     bd = fitness_breakdown(result, total_buses=total_buses)
+    bus_stats = result.get("bus_stats", [])
+    fleet_util = result.get("fleet_utilization_pct", 0.0)
+    utilizations = [b["utilization_pct"] for b in bus_stats]
     return {
         "score": score,
         "total_buses": total_buses,
@@ -107,6 +113,11 @@ def eval_full(chromosome: list[dict]) -> dict:
         "stranded": result["stranded_passengers"],
         "late": result["late_passengers"],
         "breakdown": bd,
+        # Feedback #6: per-bus utilization
+        "fleet_utilization_pct": fleet_util,
+        "min_bus_util_pct": round(min(utilizations), 2) if utilizations else 0.0,
+        "max_bus_util_pct": round(max(utilizations), 2) if utilizations else 0.0,
+        "bus_stats": bus_stats,
     }
 
 # ─── 2. Baseline ─────────────────────────────────────────────────────────────
@@ -160,6 +171,10 @@ for algo_name, runner in algo_configs:
             "avg_travel": full_res["avg_travel"],
             "avg_delay": full_res["avg_delay"],
             "total_buses": full_res["total_buses"],
+            # Feedback #6: utilization
+            "fleet_utilization_pct": full_res["fleet_utilization_pct"],
+            "min_bus_util_pct": full_res["min_bus_util_pct"],
+            "max_bus_util_pct": full_res["max_bus_util_pct"],
         })
         all_histories.append(history)
         print(f"    Seed={s} | Score={full_res['score']:.4f} "
@@ -214,6 +229,20 @@ output = {
         "sim_window_min": sim_time,
         "seeds": SEEDS,
         "reference": "Díaz-Ramírez et al. (2022) doi:10.1016/j.cie.2022.108101",
+        # Feedback #7: บันทึก parameter + hardware ให้เปรียบเทียบย้อนกลับได้
+        "algo_params": {
+            "GA":  {"generations": GA_GENS},
+            "SA":  {"max_iter": SA_ITERS},
+            "PSO": {"max_iter": PSO_ITERS},
+            "ACO": {"iterations": ACO_ITERS, "num_ants": 10},
+        },
+        "hardware": {
+            "platform": platform.platform(),
+            "python": platform.python_version(),
+            "cpu_count": os.cpu_count(),
+            "parallelism": "sequential (1 thread per algorithm run)",
+        },
+        "demand_mode": "fixed-demand (ctx.passenger_demands) during search AND final eval",
     },
     "demand_stats": stats,
     "results": results,

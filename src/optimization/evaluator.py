@@ -35,8 +35,10 @@ def evaluate(
     chromosome        : รายการ route dict
     ctx               : RouteContext (graph, stops, ...)
     runs              : จำนวนรอบที่รัน (เฉลี่ยผล)
-    passenger_demands : Fixed demand list จาก timetable (None = สุ่ม legacy mode)
+    passenger_demands : Fixed demand list จาก timetable
+                        (None = ใช้ ctx.passenger_demands ถ้ามี, ไม่งั้น legacy สุ่ม)
     seed              : Random seed สำหรับ reproducibility
+                        (None = ใช้ ctx.eval_seed ถ้ามี)
 
     Notes
     -----
@@ -44,6 +46,10 @@ def evaluate(
     เพื่อให้ทุก chromosome ถูกประเมินบน horizon เดียวกัน
     """
     simulation_time = ctx.end_time
+    if passenger_demands is None:
+        passenger_demands = ctx.passenger_demands
+    if seed is None:
+        seed = ctx.eval_seed
 
     active_routes = [
         {

@@ -45,10 +45,13 @@ def generate_random_route(
             next_stop = random.choice(neighbors)
         path.append(next_stop)
     return path
-def create_gene(stops: list[str], graph: nx.DiGraph) -> dict:
+def create_gene(stops: list[str], graph: nx.DiGraph, ctx: RouteContext | None = None) -> dict:
     path = generate_random_route(stops, graph)
     cycle_time = calculate_cycle_time(path, graph)
-    num_bus = 5
+    if ctx is not None:
+        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
+    else:
+        num_bus = 5
     start = random.randint(420, 450)
     end = random.randint(1080, 1260)
     return {
@@ -85,7 +88,7 @@ def random_chromosome(ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(tuple(best_path))
         cycle_time = calculate_cycle_time(best_path, ctx.graph)
-        num_bus = 5
+        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
         start_time = random.randint(420, 450)
         end_time = random.randint(1080, 1260)
         chromosome.append({
@@ -109,10 +112,10 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
-        num_bus = 5
+        num_bus = max(ctx.min_per_route, min(ctx.max_per_route, gene.get("num_bus", ctx.min_per_route)))
         start = max(420, min(450, gene.get("startTime", 420)))
         end = max(1080, min(1260, gene.get("endTime", 1260)))
-        
+
         if end > ctx.end_time:
             continue
         repaired.append({
@@ -132,7 +135,7 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             continue
         used_paths.add(path_tuple)
         cycle_time = calculate_cycle_time(path, ctx.graph)
-        num_bus = 5
+        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
         repaired.append({
             "path": path,
             "num_bus": num_bus,
@@ -185,11 +188,13 @@ def mutation(chromosome: list[dict], mutation_rate: float, ctx: RouteContext) ->
             child[idx]["cycle_time"] = cycle_time
             child[idx]["headway"] = round(cycle_time / num_bus, 2)
     elif move_type == "bus":
-        child[idx]["num_bus"] = 5
+        current = child[idx].get("num_bus", ctx.min_per_route)
+        step = random.choice([-1, 1])
+        child[idx]["num_bus"] = max(ctx.min_per_route, min(ctx.max_per_route, current + step))
         cycle_time = child[idx]["cycle_time"]
         num_bus = child[idx]["num_bus"]
         child[idx]["headway"] = round(cycle_time / num_bus, 2)
-    
+
 
     elif move_type == "time":
         shift_start = random.randint(-15, 15)

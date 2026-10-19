@@ -114,9 +114,11 @@ colors = ["0,100,220", "220,50,50", "50,220,50", "220,220,50", "220,0,220", "0,2
 for i, route in enumerate(schedule):
     route["color"] = colors[i % len(colors)]
 
+# NOTE: num_bus มาจาก optimizer โดยตรง ไม่ override เป็น 5 อีกต่อไป
+# เส้นทางที่ไม่มีค่าให้ fallback เป็น 1 (ขั้นต่ำที่สมเหตุสมผล)
 for route in schedule:
-    route["num_bus"] = 5
-    
+    route["num_bus"] = int(route.get("num_bus", 1))
+
 
 add_root = ET.Element("additional")
 stop_edges_str = {}

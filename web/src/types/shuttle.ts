@@ -14,6 +14,30 @@ export interface RouteSchedule {
   timetable?: TimetableEntry[];
 }
 
+export interface BusStat {
+  bus_id: number;
+  route: string[];
+  capacity: number;
+  trips: number;
+  boarded: number;
+  alighted: number;
+  ended_with_pax: number;
+  utilization_pct: number;
+}
+
+export interface ODEntry {
+  from: string;
+  to: string;
+  count: number;
+}
+
+export interface MobilityPoint {
+  t: number;        // simulation minute
+  waiting: number;  // reached stop, not yet on bus
+  on_bus: number;   // on bus, not yet arrived
+  arrived: number;  // cumulative passengers who've arrived at destination
+}
+
 export interface SimulationResult {
   baseline_wait: number;
   baseline_travel: number;
@@ -25,6 +49,21 @@ export interface SimulationResult {
   optimized_served?: number;
   optimized_waiting?: number;
   schedule: RouteSchedule[];
+  // Feedback #7: convergence + timing from API
+  history?: number[];
+  elapsed_sec?: number;
+  algorithm?: string;
+  // Feedback #1,#6: on-time + utilization
+  on_time_rate_pct?: number | null;
+  late_passengers?: number | null;
+  stranded_passengers?: number | null;
+  total_passengers?: number | null;
+  total_buses?: number | null;
+  fleet_utilization_pct?: number | null;
+  bus_stats?: BusStat[];
+  od_matrix?: ODEntry[];
+  mobility_timeseries?: MobilityPoint[];
+  data_source?: "live" | "demo";
 }
 
 export interface BenchmarkAlgorithmData {

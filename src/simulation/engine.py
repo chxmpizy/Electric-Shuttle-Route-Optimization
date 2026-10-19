@@ -209,6 +209,7 @@ def run_simulation(
                 # Layover ที่ป้ายแรก (ปลายรอบ)
                 if bus.current_index == 0:
                     bus.next_depart_time += LAYOVER_TIME_MIN
+                    bus.trip_count += 1
             else:
                 bus.started = True
                 bus.next_depart_time = t + (bus.segment_times[0] if bus.segment_times else 1.0) + DWELL_TIME_MIN
@@ -238,6 +239,10 @@ def run_simulation(
                     new_queue.append(p)
             if current_stop in queues:
                 queues[current_stop] = new_queue
+
+            # สะสม counter รายคัน (feedback #6: Monitor utilization)
+            bus.total_boarded += len(boarded)
+            bus.total_alighted += len(alighted)
 
             # บันทึก Event
             if alighted or boarded:
@@ -276,6 +281,71 @@ def run_simulation(
     avg_delay = sum(delay_times) / len(delay_times) if delay_times else 0.0
     on_time_rate = len(on_time) / len(with_class) * 100 if with_class else 0.0
 
+    # ─── Per-bus utilization (feedback #6: Monitor each bus) ──────────────
+    bus_stats: list[dict] = []
+    for b in buses:
+        util_pct = (b.total_boarded / (b.trip_count * b.capacity) * 100) if b.trip_count > 0 and b.capacity > 0 else 0.0
+        bus_stats.append({
+            "bus_id": b.id,
+            "route": b.route,
+            "capacity": b.capacity,
+            "trips": b.trip_count,
+            "boarded": b.total_boarded,
+            "alighted": b.total_alighted,
+            "ended_with_pax": len(b.passengers),
+            "utilization_pct": round(util_pct, 2),
+        })
+    total_trips = sum(b.trip_count for b in buses)
+    fleet_util = (sum(b.total_boarded for b in buses) /
+                  max(1, total_trips * bus_capacity) * 100) if buses else 0.0
+
+    # ─── Mobility: Origin-Destination matrix (feedback #5) ────────────────
+    od_counts: dict[tuple, int] = {}
+    for p in all_passengers:
+        key = (p.origin, p.destination)
+        od_counts[key] = od_counts.get(key, 0) + 1
+    od_matrix = [
+        {"from": o, "to": d, "count": c}
+        for (o, d), c in sorted(od_counts.items(), key=lambda kv: -kv[1])
+    ]
+
+    # ─── Mobility: time series — waiting / on-bus / arrived ──────────────
+    # Bin by 10-minute buckets so the series is dashboard-friendly
+    BUCKET = 10
+    n_buckets = (simulation_time // BUCKET) + 1
+    arrived_cum = [0] * n_buckets
+    boarded_cum = [0] * n_buckets  # cumulative boardings
+    arrival_at_stop_cum = [0] * n_buckets  # cumulative passengers who've reached their stop
+
+    for p in all_passengers:
+        if p.drop_time is not None:
+            idx = min(n_buckets - 1, int(p.drop_time // BUCKET))
+            arrived_cum[idx] += 1
+        if p.board_time is not None:
+            idx = min(n_buckets - 1, int(p.board_time // BUCKET))
+            boarded_cum[idx] += 1
+        if p.arrival_time is not None:
+            idx = min(n_buckets - 1, int(p.arrival_time // BUCKET))
+            arrival_at_stop_cum[idx] += 1
+
+    # Convert to running totals
+    for i in range(1, n_buckets):
+        arrived_cum[i] += arrived_cum[i - 1]
+        boarded_cum[i] += boarded_cum[i - 1]
+        arrival_at_stop_cum[i] += arrival_at_stop_cum[i - 1]
+
+    timeseries = []
+    for i in range(n_buckets):
+        t_minute = i * BUCKET
+        waiting = arrival_at_stop_cum[i] - boarded_cum[i]  # มาถึงป้ายแล้ว แต่ยังไม่ขึ้นรถ
+        on_bus = boarded_cum[i] - arrived_cum[i]           # ขึ้นรถแล้ว แต่ยังไม่ถึงปลายทาง
+        timeseries.append({
+            "t": t_minute,
+            "waiting": max(0, waiting),
+            "on_bus": max(0, on_bus),
+            "arrived": arrived_cum[i],
+        })
+
     return {
         # ─ เวลาเฉลี่ย (Backward compatible) ─
         "avg_wait_time": round(avg_wait, 2),
@@ -292,6 +362,14 @@ def run_simulation(
         "on_time_rate_pct": round(on_time_rate, 2),
         "avg_delay_minutes": round(avg_delay, 2),
         "max_delay_minutes": round(max(delay_times, default=0.0), 2),
-        # ─ Event log สำหรับ Visualization ─
+        # ─ Monitor per-bus (feedback #6) ─
+        "bus_stats": bus_stats,
+        "total_buses": len(buses),
+        "total_trips": total_trips,
+        "fleet_utilization_pct": round(fleet_util, 2),
+        # ─ Mobility (feedback #5): O-D matrix + passenger-flow time series ─
+        "od_matrix": od_matrix,
+        "mobility_timeseries": timeseries,
+        # ─ Event log สำหรับ Visualization เชิงลึก ─
         "event_log": event_log,
     }

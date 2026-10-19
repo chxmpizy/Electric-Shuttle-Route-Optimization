@@ -16,13 +16,17 @@ from algorithms.ACO import run_aco
 from models.sumo import find_sumo_binary, get_sumo_env
 
 def get_simulation_metrics(chromosome, ctx):
-    """Run simulation directly and return raw metrics."""
+    """Run simulation directly and return raw metrics.
+
+    ใช้ ctx.passenger_demands / ctx.graph / ctx.eval_seed ถ้ามี
+    เพื่อให้ metrics ที่ API ส่งกลับใช้ demand ชุดเดียวกับการค้นหา (fair comparison)
+    """
     # Handle both Chromosome objects and direct list[dict]
     if hasattr(chromosome, "schedule"):
         schedule = chromosome.schedule
     else:
         schedule = chromosome
-        
+
     active_routes = [
         {
             "path": gene["path"],
@@ -34,8 +38,18 @@ def get_simulation_metrics(chromosome, ctx):
         }
         for gene in schedule
     ]
-    simulation_time = max(gene["endTime"] for gene in schedule)
-    return run_simulation(active_routes, ctx.stops, simulation_time), schedule
+    simulation_time = max(ctx.end_time, max(gene["endTime"] for gene in schedule))
+    return (
+        run_simulation(
+            active_routes,
+            ctx.stops,
+            simulation_time,
+            passenger_demands=ctx.passenger_demands,
+            graph=ctx.graph,
+            seed=ctx.eval_seed,
+        ),
+        schedule,
+    )
 
 def print_comparison(base_metrics, opt_metrics, algo_name):
     print("\n" + "="*50)

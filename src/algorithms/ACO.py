@@ -35,7 +35,7 @@ def construct_solution(
         if cycle_time <= 0:
             continue
         used_paths.add(path_key)
-        num_bus = 5
+        num_bus = random.randint(ctx.min_per_route, ctx.max_per_route)
         start_time = random.randint(420, 450)
         end_time = random.randint(1080, 1260)
         solution.append({
@@ -46,11 +46,14 @@ def construct_solution(
             "startTime": start_time,
             "endTime": end_time,
         })
-    remain = ctx.total_buses - ctx.num_routes * ctx.min_per_route
+    # จัดสรร bus เพิ่มเติมที่เหลือ (ถ้างบรวมยังไม่หมด) ตาม pheromone + heuristic
+    allocated = sum(r["num_bus"] for r in solution)
+    remain = max(0, ctx.total_buses - allocated)
     for _ in range(remain):
         probs = []
         for route in solution:
-            if False:
+            # ข้ามเส้นทางที่เต็ม max_per_route แล้ว
+            if route["num_bus"] >= ctx.max_per_route:
                 probs.append(0.0)
                 continue
             path_key = normalize_path(route["path"])

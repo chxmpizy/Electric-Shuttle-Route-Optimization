@@ -25,8 +25,7 @@ class Particle:
 def discretize(position: list[float], fixed_routes: list[dict], ctx: RouteContext) -> list[dict]:
     solution = []
     for i, route in enumerate(fixed_routes):
-        num_bus = round(position[i * 2])
-        num_bus = 5
+        num_bus = max(ctx.min_per_route, min(ctx.max_per_route, round(position[i * 2])))
         start_time = round(position[i * 2 + 1])
         base_start = route["startTime"]
         base_end = route["endTime"]
