@@ -1,0 +1,250 @@
+{
+  "metadata": {
+    "experiment": "Fitness weight sensitivity analysis",
+    "demand_size": 400,
+    "sim_window_min": 900,
+    "ga_generations": 10,
+    "seed": 42,
+    "fixed_values": {
+      "PENALTY_UNSERVED": 60.0,
+      "NORM_WAIT": 15.0,
+      "NORM_TRAVEL": 20.0,
+      "NORM_DELAY": 10.0
+    },
+    "note": "น้ำหนักต่างกัน → GA ค้นเจอ chromosome ที่โปรไฟล์ต่างกัน"
+  },
+  "configurations": [
+    {
+      "config": "A: current",
+      "weights": {
+        "W_WAIT": 0.2,
+        "W_TRAVEL": 0.15,
+        "W_DELAY": 0.35
+      },
+      "ga_best_score": 2.2658,
+      "elapsed_sec": 4.36,
+      "total_buses": 28,
+      "on_time_pct": 64.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 142,
+      "avg_wait": 1.83,
+      "avg_travel": 13.48,
+      "avg_delay": 4.01,
+      "fleet_util": 2.3,
+      "breakdown": {
+        "wait_component": 0.0244,
+        "travel_component": 0.1011,
+        "delay_component": 0.1403,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.2658,
+        "on_time_rate_pct": 64.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "B: equal",
+      "weights": {
+        "W_WAIT": 0.33,
+        "W_TRAVEL": 0.33,
+        "W_DELAY": 0.33
+      },
+      "ga_best_score": 2.395,
+      "elapsed_sec": 4.42,
+      "total_buses": 28,
+      "on_time_pct": 64.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 142,
+      "avg_wait": 1.83,
+      "avg_travel": 13.48,
+      "avg_delay": 4.01,
+      "fleet_util": 2.3,
+      "breakdown": {
+        "wait_component": 0.0403,
+        "travel_component": 0.2224,
+        "delay_component": 0.1323,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.395,
+        "on_time_rate_pct": 64.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "C: delay-only",
+      "weights": {
+        "W_WAIT": 0.0,
+        "W_TRAVEL": 0.0,
+        "W_DELAY": 1.0
+      },
+      "ga_best_score": 3.163,
+      "elapsed_sec": 4.55,
+      "total_buses": 28,
+      "on_time_pct": 90.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 38,
+      "avg_wait": 3.13,
+      "avg_travel": 4.75,
+      "avg_delay": 1.63,
+      "fleet_util": 2.32,
+      "breakdown": {
+        "wait_component": 0.0,
+        "travel_component": 0.0,
+        "delay_component": 0.163,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.163,
+        "on_time_rate_pct": 90.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "D: wait-heavy",
+      "weights": {
+        "W_WAIT": 0.5,
+        "W_TRAVEL": 0.1,
+        "W_DELAY": 0.1
+      },
+      "ga_best_score": 2.1685,
+      "elapsed_sec": 7.88,
+      "total_buses": 28,
+      "on_time_pct": 64.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 142,
+      "avg_wait": 1.83,
+      "avg_travel": 13.48,
+      "avg_delay": 4.01,
+      "fleet_util": 2.3,
+      "breakdown": {
+        "wait_component": 0.061,
+        "travel_component": 0.0674,
+        "delay_component": 0.0401,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.1685,
+        "on_time_rate_pct": 64.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "E: travel-heavy",
+      "weights": {
+        "W_WAIT": 0.1,
+        "W_TRAVEL": 0.5,
+        "W_DELAY": 0.1
+      },
+      "ga_best_score": 2.8675,
+      "elapsed_sec": 4.64,
+      "total_buses": 21,
+      "on_time_pct": 18.0,
+      "served": 400,
+      "stranded": 0,
+      "late": 328,
+      "avg_wait": 26.36,
+      "avg_travel": 16.0,
+      "avg_delay": 29.18,
+      "fleet_util": 3.04,
+      "breakdown": {
+        "wait_component": 0.1757,
+        "travel_component": 0.4,
+        "delay_component": 0.2918,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.8675,
+        "on_time_rate_pct": 18.0,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "F: paper abstract",
+      "weights": {
+        "W_WAIT": 0.3,
+        "W_TRAVEL": 0.0,
+        "W_DELAY": 0.7
+      },
+      "ga_best_score": 3.1767,
+      "elapsed_sec": 4.4,
+      "total_buses": 28,
+      "on_time_pct": 90.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 38,
+      "avg_wait": 3.13,
+      "avg_travel": 4.75,
+      "avg_delay": 1.63,
+      "fleet_util": 2.32,
+      "breakdown": {
+        "wait_component": 0.0626,
+        "travel_component": 0.0,
+        "delay_component": 0.1141,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.1767,
+        "on_time_rate_pct": 90.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "G: paper method",
+      "weights": {
+        "W_WAIT": 0.5,
+        "W_TRAVEL": 0.0,
+        "W_DELAY": 0.5
+      },
+      "ga_best_score": 2.2615,
+      "elapsed_sec": 4.33,
+      "total_buses": 28,
+      "on_time_pct": 64.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 142,
+      "avg_wait": 1.83,
+      "avg_travel": 13.48,
+      "avg_delay": 4.01,
+      "fleet_util": 2.3,
+      "breakdown": {
+        "wait_component": 0.061,
+        "travel_component": 0.0,
+        "delay_component": 0.2005,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.2615,
+        "on_time_rate_pct": 64.5,
+        "unserved_ratio_pct": 0.0
+      }
+    },
+    {
+      "config": "H: delay-dominant",
+      "weights": {
+        "W_WAIT": 0.1,
+        "W_TRAVEL": 0.1,
+        "W_DELAY": 0.6
+      },
+      "ga_best_score": 3.1066,
+      "elapsed_sec": 4.38,
+      "total_buses": 29,
+      "on_time_pct": 71.5,
+      "served": 400,
+      "stranded": 0,
+      "late": 114,
+      "avg_wait": 2.9,
+      "avg_travel": 11.13,
+      "avg_delay": 8.86,
+      "fleet_util": 2.24,
+      "breakdown": {
+        "wait_component": 0.0193,
+        "travel_component": 0.0557,
+        "delay_component": 0.5316,
+        "unserved_penalty": 0.0,
+        "fleet_component": 0.0,
+        "total_cost": 0.6066,
+        "on_time_rate_pct": 71.5,
+        "unserved_ratio_pct": 0.0
+      }
+    }
+  ]
+}

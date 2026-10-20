@@ -48,6 +48,8 @@ graph TD
 | **03** | [[03_Advisor_Feedback_Deep_Dive\|03. Advisor Feedback Deep Dive]] | การวิเคราะห์และถอดรหัส Feedback ทั้ง 11 ข้อของอาจารย์ที่ปรึกษาและกรรมการ | `Completed` |
 | **04** | [[04_System_Architecture_and_Methodology\|04. System Architecture & Methodology]] | สถาปัตยกรรมระบบ Data Pipeline, Metaheuristics, Simulation Engine, SUMO, Web UI | `Completed` |
 | **05** | [[05_Implementation_Roadmap_and_Action_Plan\|05. Implementation Action Plan]] | แผนปฏิบัติงานทีละขั้น (Phase 1–6), การแก้โค้ดแต่ละโมดูล และ Checklist ตรวจสอบ | `Ready to Execute` |
+| **06** | [[06_Input_and_Assumptions\|06. Input Data & Assumptions]] | แยก Input เป็น ข้อมูลจริง / อนุมาน / สมมติ พร้อม source และ impact (ตอบ feedback #4) | `Completed` |
+| **07** | [[07_Fitness_Weights_Rationale\|07. Fitness Weights Rationale & Sensitivity]] | เหตุผลของน้ำหนัก fitness + ผลทดลอง sensitivity 8 แบบ (ตอบ feedback #1) | `Completed` |
 
 ---
 
