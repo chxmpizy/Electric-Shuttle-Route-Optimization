@@ -1,56 +1,36 @@
-"""
-src/optimization/fitness.py
-============================
-Multi-Objective Fitness Function ตาม Feedback อาจารย์
-
-Priority (ตามลำดับความสำคัญ):
-  1. ผู้โดยสารถึงปลายทางครบ (ลงโทษหนักเมื่อมีคนตกค้าง)
-  2. เข้าเรียนทัน (ค่าปรับตามจำนวนนาทีที่สาย)
-  3. เวลารอและเวลาเดินทางเหมาะสม
-  4. จำนวนรถที่ใช้ (ปรับได้)
+"""Multi-objective fitness function สำหรับประเมินตารางเดินรถ
 
 สูตร:
-  cost = w_wait * avg_wait/norm_w
-       + w_travel * avg_travel/norm_t
-       + w_delay * avg_delay/norm_d
-       + penalty_unserved * unserved_ratio
-       + fleet_cost * total_buses
+    cost = W_WAIT   * avg_wait   / NORM_WAIT
+         + W_TRAVEL * avg_travel / NORM_TRAVEL
+         + W_DELAY  * avg_delay  / NORM_DELAY
+         + PENALTY_UNSERVED * unserved_ratio
+         + FLEET_COST * total_buses
 
-Lower cost = Better solution
+ค่า cost ยิ่งต่ำ = ตารางเดินรถยิ่งดี
 """
 from __future__ import annotations
 
-# ─── Weight configuration ─────────────────────────────────────────────────────
-W_WAIT = 0.20           # เวลารอเฉลี่ย
-W_TRAVEL = 0.15         # เวลาเดินทางเฉลี่ย
-W_DELAY = 0.35          # นาทีสายเฉลี่ย (สำคัญที่สุดด้าน Quality)
-PENALTY_UNSERVED = 60.0 # โทษต่อผู้โดยสาร 1 คนที่ตกค้าง (เทียบเท่าสาย 60 นาที)
-FLEET_COST = 0.0        # ต้นทุนต่อรถ 1 คัน (ปิดอยู่, เปิดเมื่อทำ fleet minimization)
+# น้ำหนักของแต่ละ objective (Config F จากผล sensitivity analysis — on-time 90.5%)
+W_WAIT = 0.30            # เวลารอเฉลี่ย
+W_TRAVEL = 0.00          # เวลาเดินทางเฉลี่ย (ปิด ตาม sensitivity: travel-heavy ทำ on-time ร่วง)
+W_DELAY = 0.70           # นาทีเข้าเรียนสายเฉลี่ย
+PENALTY_UNSERVED = 60.0  # โทษต่อสัดส่วนผู้โดยสารตกค้าง
+FLEET_COST = 0.0         # ต้นทุนต่อจำนวนรถที่ใช้
 
-# ─── Normalization denominators ───────────────────────────────────────────────
-NORM_WAIT = 15.0    # เวลารอเฉลี่ย "ยอมรับได้" (นาที)
-NORM_TRAVEL = 20.0  # เวลาเดินทางเฉลี่ย "ยอมรับได้" (นาที)
-NORM_DELAY = 10.0   # นาทีสายเฉลี่ย "ยอมรับได้" (นาที)
+# ตัวหารสำหรับ normalize ให้แต่ละ term อยู่ในสเกลเดียวกัน (นาที)
+NORM_WAIT = 15.0
+NORM_TRAVEL = 20.0
+NORM_DELAY = 10.0
 
 
 def fitness(result: dict, total_buses: int = 0) -> float:
-    """
-    คำนวณคะแนน (ยิ่งต่ำยิ่งดี) จากผลการจำลอง
-
-    Parameters
-    ----------
-    result      : dict จาก run_simulation()
-    total_buses : จำนวนรถรวม (ใช้เมื่อเปิด FLEET_COST)
-
-    Returns
-    -------
-    float  cost score (lower = better)
-    """
+    """คำนวณคะแนน cost จากผลการจำลอง (ยิ่งต่ำยิ่งดี)"""
     total = result.get("total_passengers", 0)
     served = result.get("served_passengers", 0)
     stranded = result.get("stranded_passengers", 0)
 
-    # กรณีไม่มีผู้โดยสารเลย — ให้คะแนนแย่มาก
+    # ไม่มีผู้โดยสารหรือไม่มีคนขึ้นรถเลย → คืนค่าคะแนนแย่สุด
     if total == 0 or served == 0:
         return 9999.0
 
@@ -70,9 +50,7 @@ def fitness(result: dict, total_buses: int = 0) -> float:
 
 
 def fitness_breakdown(result: dict, total_buses: int = 0) -> dict:
-    """
-    แสดงส่วนประกอบแต่ละส่วนของคะแนน สำหรับ Debug และ Presentation
-    """
+    """คืนค่าแต่ละ component ของ cost สำหรับการ debug/นำเสนอ"""
     total = result.get("total_passengers", 1)
     stranded = result.get("stranded_passengers", 0)
     avg_wait = result.get("avg_wait_time", 0.0)

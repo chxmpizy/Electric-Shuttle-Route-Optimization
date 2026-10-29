@@ -299,11 +299,135 @@ def summarize_demands(demands: list[PassengerDemand]) -> dict:
     }
 
 
+def load_cs_periods_csv(
+    normal_csv: str | Path = "data/processed/CS/normal/periods.csv",
+    special_csv: str | Path = "data/processed/CS/special/periods.csv",
+    day_filter: Optional[list[str]] = None,
+    year_filter: Optional[list[int]] = None,
+    include_sections: tuple[str, ...] = ("normal", "special"),
+    origin_stop: str = DEFAULT_ORIGIN_STOP,
+    graph: Optional[nx.DiGraph] = None,
+    buffer_min: float = BUFFER_MIN,
+    arrive_before_min: float = ARRIVE_BEFORE_MIN,
+    spread_half_min: float = SPREAD_HALF_MIN,
+    limited_section_size: int = LIMITED_SECTION_SIZE,
+    general_section_size: int = GENERAL_SECTION_SIZE,
+) -> list[PassengerDemand]:
+    """โหลด demand จาก data/processed/CS/{normal,special}/periods.csv ที่ผ่านการ clean แล้ว
+
+    - รวมภาคปกติ + ภาคพิเศษ (เลือกได้ผ่าน include_sections)
+    - กรองตามวัน (เช่น ["อังคาร", "พฤหัสบดี"]) และปี (เช่น [1, 2, 3])
+    - ตัดแถวที่ไม่มีเวลาจริง (เช่น "ไม่มีคาบประจำ", "ยังไม่ทราบวันเวลา")
+    - สูตรเวลาเหมือน load_cs_timetable() เดิม
+    """
+    frames: list[pd.DataFrame] = []
+    sources = {
+        "normal": Path(normal_csv),
+        "special": Path(special_csv),
+    }
+    for sec in include_sections:
+        path = sources.get(sec)
+        if path is None or not path.exists():
+            continue
+        df = pd.read_csv(path)
+        day_col = "วัน" if "วัน" in df.columns else "วัน/สถานะ"
+        df = df.rename(columns={day_col: "วัน"})
+        room_col = "ห้องในต้นทาง" if "ห้องในต้นทาง" in df.columns else "ห้องจากต้นทาง"
+        if room_col in df.columns:
+            df = df.rename(columns={room_col: "ห้อง"})
+        df["_source"] = sec
+        frames.append(df)
+
+    if not frames:
+        return []
+
+    df = pd.concat(frames, ignore_index=True)
+    df["วัน"] = df["วัน"].astype(str).str.strip()
+    df = df[df["วัน"].isin(DAY_MAP.keys())]
+
+    def _year_from_code(code: str) -> Optional[int]:
+        if not isinstance(code, str):
+            return None
+        for token in code.split("_"):
+            if token.startswith("Y") and len(token) >= 2 and token[1].isdigit():
+                return int(token[1])
+        return None
+
+    df["_year"] = df["รหัสชุด"].apply(_year_from_code)
+
+    if day_filter:
+        df = df[df["วัน"].isin(day_filter)]
+    if year_filter:
+        df = df[df["_year"].isin(year_filter)]
+
+    demands: list[PassengerDemand] = []
+    pid = 0
+
+    for _, row in df.iterrows():
+        course = str(row.get("วิชา", "")).strip()
+        section = str(row.get("เซค", "")).strip()
+        day = str(row.get("วัน", "")).strip()
+        building = str(row.get("ตึก", "")).strip()
+        start_raw = row.get("เริ่ม", None)
+
+        if not course or not day or pd.isna(start_raw):
+            continue
+
+        class_start = _time_str_to_minutes(start_raw)
+        if class_start is None or class_start < 360 or class_start > 1320:
+            continue
+
+        general = _is_general(course)
+        n_students = general_section_size if general else limited_section_size
+        dest_stop = _resolve_stop(building)
+        walk_min = WALK_TIME_MIN.get(dest_stop, DEFAULT_WALK_MIN)
+        day_idx = DAY_MAP.get(day, 0)
+
+        travel_est = _get_travel_time(graph, origin_stop, dest_stop)
+        target_at_stop = (
+            class_start
+            - walk_min
+            - travel_est
+            - buffer_min
+            - arrive_before_min
+        )
+        target_arrival = class_start - arrive_before_min
+
+        for idx in range(n_students):
+            frac = idx / max(1, n_students - 1)
+            spread = (frac - 0.5) * 2 * spread_half_min
+            arrival = target_at_stop + spread - PREPARATION_MIN
+
+            demands.append(PassengerDemand(
+                passenger_id=pid,
+                origin=origin_stop,
+                destination=dest_stop,
+                arrival_at_stop=round(arrival, 1),
+                class_start_time=class_start,
+                walk_time_minutes=walk_min,
+                target_arrival=target_arrival,
+                travel_time_estimate=round(travel_est, 1),
+                course_code=course,
+                building=building,
+                day_of_week=day_idx,
+                section=section,
+                is_general_course=general,
+                group_size=1,
+            ))
+            pid += 1
+
+    demands.sort(key=lambda d: d.arrival_at_stop)
+    return demands
+
+
 if __name__ == "__main__":
     import json, sys
     sys.path.insert(0, ".")
     from src.data.graph import build_graph, make_bidirectional
     graph = make_bidirectional(build_graph())
-    demands = load_cs_timetable(graph=graph)
+    demands = load_cs_periods_csv(
+        day_filter=["อังคาร", "พฤหัสบดี"],
+        graph=graph,
+    )
     stats = summarize_demands(demands)
     print(json.dumps(stats, ensure_ascii=False, indent=2))

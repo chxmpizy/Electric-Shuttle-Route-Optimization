@@ -1,4 +1,4 @@
-"""Data loading and cleaning for campus bus route data."""
+
 from pathlib import Path
 import pandas as pd
 from config.settings import ROUTE_CSV
@@ -19,9 +19,7 @@ STOP_MAP = {
     "อาคารเรียนรวมกลุ่มสังคมศาสตร์": "Social",
 }
 def load_routes(csv_path: Path | str | None = None) -> pd.DataFrame:
-    """Load raw route CSV from disk."""
     path = Path(csv_path) if csv_path else ROUTE_CSV
     return pd.read_csv(path)
 def get_stop_names() -> list[str]:
-    """Return unique normalized stop names used in the graph."""
     return sorted(set(STOP_MAP.values()))

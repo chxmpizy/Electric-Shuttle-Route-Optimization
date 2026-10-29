@@ -18,7 +18,7 @@ import sys, os, time, json, random, copy, platform
 sys.path.insert(0, "src")
 
 from pathlib import Path
-from data.timetable import load_cs_timetable, summarize_demands
+from data.timetable import load_cs_periods_csv, summarize_demands
 from data.graph import build_graph, make_bidirectional
 from data.routes import build_fixed_routes, get_all_stops, HUB_STOPS
 from optimization.context import RouteContext
@@ -39,7 +39,8 @@ SA_ITERS = 200
 PSO_ITERS = 30
 ACO_ITERS = 20
 
-OUTPUT_FILE = "cs_benchmark_result.json"
+OUTPUT_FILE = "cs_benchmark_result_v2.json"
+DEMAND_DAYS = ["อังคาร", "พฤหัสบดี"]
 
 print("=" * 70)
 print("  UniFlow EV — CS Department Algorithm Benchmark")
@@ -52,9 +53,10 @@ graph = make_bidirectional(build_graph())
 stops = get_all_stops()
 fixed_routes = build_fixed_routes(graph)
 
-demands = load_cs_timetable(
-    xlsx_path="data/raw/cs_timetable.xlsx",
-    day_filter=["อังคาร", "พฤหัสบดี"],
+demands = load_cs_periods_csv(
+    normal_csv="data/processed/CS/normal/periods.csv",
+    special_csv="data/processed/CS/special/periods.csv",
+    day_filter=DEMAND_DAYS,
     graph=graph,
     limited_section_size=50,
     general_section_size=120,
@@ -222,7 +224,13 @@ for algo in ["GA", "SA", "PSO", "ACO"]:
 # ─── 5. บันทึกผล ─────────────────────────────────────────────────────────────
 output = {
     "metadata": {
-        "dataset": "CS Department Timetable (อังคาร+พฤหัส)",
+        "dataset": f"CS Department Timetable — normal+special, days={DEMAND_DAYS}, all years",
+        "source_csv": {
+            "normal": "data/processed/CS/normal/periods.csv",
+            "special": "data/processed/CS/special/periods.csv",
+        },
+        "fitness_weights": {"W_WAIT": 0.30, "W_TRAVEL": 0.00, "W_DELAY": 0.70,
+                            "PENALTY_UNSERVED": 60.0, "FLEET_COST": 0.0},
         "total_passengers": stats["total_passengers"],
         "limited_size": 50,
         "general_size": 120,

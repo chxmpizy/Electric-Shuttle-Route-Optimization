@@ -1,9 +1,9 @@
-"""Campus transit graph construction and cycle-time utilities."""
 import networkx as nx
 def km_to_min(km: float, speed_kmh: float = 50.0) -> float:
-    """Convert distance (km) to travel time (minutes) at a given speed."""
+
     return round(km * 60 / speed_kmh, 2)
 def _add_route_edges(graph: nx.DiGraph, edges: list[tuple[str, str, float]]) -> None:
+
     for source, target, km in edges:
         graph.add_edge(source, target, weight=km_to_min(km))
 
@@ -28,7 +28,7 @@ GPS_COORDS = {
 }
 
 def haversine(lon1, lat1, lon2, lat2):
-    """Calculate the great circle distance between two points in km."""
+    # Calculate the great circle distance between two points in km.
     R = 6371.0 # Earth radius in km
     dlon = math.radians(lon2 - lon1)
     dlat = math.radians(lat2 - lat1)
@@ -37,7 +37,7 @@ def haversine(lon1, lat1, lon2, lat2):
     return R * c
 
 def get_real_dist(stop1, stop2, routing_factor=1.3):
-    """Get real-world distance between stops multiplied by a road-routing factor."""
+
     if stop1 not in GPS_COORDS or stop2 not in GPS_COORDS:
         return 1.0
     lon1, lat1 = GPS_COORDS[stop1]
@@ -46,7 +46,7 @@ def get_real_dist(stop1, stop2, routing_factor=1.3):
     return max(0.1, dist_km * routing_factor)
 
 def build_graph() -> nx.DiGraph:
-    """Build the directed campus transit graph with real-world edge weights in minutes."""
+ 
     graph = nx.DiGraph()
     stops = [
         "Dorm", "Green", "SC2_SC3", "Health", "Lecture",
@@ -55,8 +55,6 @@ def build_graph() -> nx.DiGraph:
     ]
     graph.add_nodes_from(stops)
     
-    # We will build a fully connected graph for these specific adjacent nodes
-    # based on the original topologies, but using real distances.
     edges_list = [
         ("Dorm", "Green"), ("Green", "SC2_SC3"), ("SC2_SC3", "Health"), ("Health", "Lecture"), ("Lecture", "Dorm"),
         ("Convention", "Terminal"), ("Terminal", "SC2_SC3"), ("SC2_SC3", "Library"), ("Library", "Dorm"), ("Dorm", "Convention"),
@@ -72,13 +70,12 @@ def build_graph() -> nx.DiGraph:
         
     return graph
 def make_bidirectional(graph: nx.DiGraph) -> nx.DiGraph:
-    """Add reverse edges so routes can run in both directions."""
     edges = list(graph.edges(data=True))
     for source, target, data in edges:
         graph.add_edge(target, source, weight=data["weight"])
     return graph
 def calculate_cycle_time(route_path: list[str], graph: nx.DiGraph) -> float:
-    """Calculate total cycle time for a route path on the graph (including dwell & layover time)."""
+  
     driving_time = 0.0
     for i in range(len(route_path) - 1):
         current_stop = route_path[i]

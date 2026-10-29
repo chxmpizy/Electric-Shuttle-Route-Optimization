@@ -1,4 +1,3 @@
-"""Fixed route definitions and stop metadata."""
 import networkx as nx
 from data.graph import calculate_cycle_time
 HUB_STOPS = {"Convention", "Lecture", "Terminal"}
@@ -34,7 +33,7 @@ def _route(
         "endTime": end_time,
     }
 def build_fixed_routes(graph: nx.DiGraph) -> list[dict]:
-    """Build the six baseline campus bus routes for simulation."""
+    
     definitions = [
         (1, ["Convention", "Terminal", "SC2_SC3", "Library", "Dorm", "Convention"], 420, 1250),
         (2, ["Convention", "Dorm", "Library", "SC2_SC3", "Terminal", "Convention"], 410, 1290),
