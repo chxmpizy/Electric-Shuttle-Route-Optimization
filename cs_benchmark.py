@@ -14,7 +14,7 @@ cs_benchmark.py
 
 รัน: python cs_benchmark.py
 """
-import sys, os, time, json, random, copy, platform
+import sys, os, time, json, random, copy, platform, statistics
 sys.path.insert(0, "src")
 
 from pathlib import Path
@@ -23,7 +23,7 @@ from data.graph import build_graph, make_bidirectional
 from data.routes import build_fixed_routes, get_all_stops, HUB_STOPS
 from optimization.context import RouteContext
 from optimization.fitness import fitness, fitness_breakdown
-from optimization.evaluator import evaluate
+from optimization.evaluator import evaluate, reset_eval_count, get_eval_count
 from simulation.engine import run_simulation
 
 # Algorithms
@@ -33,11 +33,17 @@ from algorithms.PSO import run_pso
 from algorithms.ACO import run_aco
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-SEEDS = [42, 123, 456]         # 3 seeds → รันแต่ละ algorithm 3 รอบ
-GA_GENS = 15
-SA_ITERS = 200
-PSO_ITERS = 30
-ACO_ITERS = 20
+SEEDS = [42, 123, 456, 789, 999]   # 5 seeds ตาม roadmap Phase 4
+
+# Evaluation budget เท่ากันทุก algorithm (นับจำนวนครั้งที่รัน simulation)
+EVAL_BUDGET = 500
+GA_POP, GA_GENS = 20, 25               # 20 × 25 = 500
+SA_ITERS = EVAL_BUDGET - 1             # 1 (initial) + 499 = 500
+SA_T_INIT = 100.0
+# cooling ให้อุณหภูมิลดถึงเกณฑ์หยุด (0.001) พอดีตอนหมด budget — ไม่หยุดก่อนกำหนด
+SA_COOLING = (0.001 / SA_T_INIT) ** (1 / (SA_ITERS + 1))
+PSO_PARTICLES, PSO_ITERS = 20, 25      # 20 × 25 = 500
+ACO_ANTS, ACO_ITERS = 10, 50           # 10 × 50 × 1 run = 500
 
 OUTPUT_FILE = "cs_benchmark_result.json"
 
@@ -141,10 +147,11 @@ results = {"baseline": {**baseline_res, "time_sec": round(baseline_time, 2),
 
 # ─── 3. Multi-seed benchmark สำหรับแต่ละ algorithm ─────────────────────────
 algo_configs = [
-    ("GA",  lambda seed: run_ga(ctx, generations=GA_GENS)),
-    ("SA",  lambda seed: run_sa(ctx, max_iter=SA_ITERS)),
-    ("PSO", lambda seed: run_pso(fixed_routes, ctx, max_iter=PSO_ITERS)),
-    ("ACO", lambda seed: run_aco(ctx, iterations=ACO_ITERS, num_ants=10)),
+    ("GA",  lambda: run_ga(ctx, population_size=GA_POP, generations=GA_GENS)),
+    ("SA",  lambda: run_sa(ctx, max_iter=SA_ITERS, t_init=SA_T_INIT, cooling_rate=SA_COOLING)),
+    ("PSO", lambda: run_pso(fixed_routes, ctx, num_particles=PSO_PARTICLES, max_iter=PSO_ITERS)),
+    # demand แบบ fixed ทำให้ simulation deterministic → runs=1 พอ (runs=3 จะกิน budget 3 เท่า)
+    ("ACO", lambda: run_aco(ctx, iterations=ACO_ITERS, num_ants=ACO_ANTS, eval_runs=1)),
 ]
 
 print(f"\n[3] Algorithm Benchmark ({len(SEEDS)} seeds each) ...")
@@ -155,13 +162,16 @@ for algo_name, runner in algo_configs:
 
     for s in SEEDS:
         random.seed(s)
+        reset_eval_count()
         t0 = time.time()
-        solution, score, history = runner(s)
+        solution, score, history = runner()
         elapsed = time.time() - t0
+        n_evals = get_eval_count()
         full_res = eval_full(solution)
         seed_results.append({
             "seed": s,
             "elapsed_sec": round(elapsed, 2),
+            "n_evals": n_evals,
             "score": full_res["score"],
             "on_time_pct": full_res["on_time_pct"],
             "served": full_res["served"],
@@ -181,7 +191,7 @@ for algo_name, runner in algo_configs:
               f"| On-time={full_res['on_time_pct']:.1f}% "
               f"| Stranded={full_res['stranded']} "
               f"| Delay={full_res['avg_delay']:.1f}m "
-              f"| {elapsed:.1f}s")
+              f"| evals={n_evals} | {elapsed:.1f}s")
 
     scores = [r["score"] for r in seed_results]
     on_times = [r["on_time_pct"] for r in seed_results]
@@ -191,31 +201,38 @@ for algo_name, runner in algo_configs:
         "mean_score": round(sum(scores)/len(scores), 4),
         "best_score": round(min(scores), 4),
         "worst_score": round(max(scores), 4),
+        "std_score": round(statistics.stdev(scores), 4) if len(scores) > 1 else 0.0,
         "mean_on_time_pct": round(sum(on_times)/len(on_times), 2),
+        "std_on_time_pct": round(statistics.stdev(on_times), 2) if len(on_times) > 1 else 0.0,
+        "best_on_time_pct": round(max(on_times), 2),
+        "worst_on_time_pct": round(min(on_times), 2),
+        "n_evals_per_run": sorted({r["n_evals"] for r in seed_results}),
     }
     print(f"    → Mean={results[algo_name]['mean_score']:.4f} "
           f"Best={results[algo_name]['best_score']:.4f} "
           f"Worst={results[algo_name]['worst_score']:.4f} "
-          f"Mean On-Time={results[algo_name]['mean_on_time_pct']:.1f}%")
+          f"Std={results[algo_name]['std_score']:.4f} "
+          f"Mean On-Time={results[algo_name]['mean_on_time_pct']:.1f}% "
+          f"(±{results[algo_name]['std_on_time_pct']:.1f})")
 
 # ─── 4. สรุปตารางเปรียบเทียบ ─────────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("  📊 SUMMARY TABLE")
 print("=" * 70)
-header = f"{'Algorithm':<10} {'Score(best)':<13} {'Score(mean)':<13} {'On-Time%':<10} {'Stranded':<10} {'Delay(m)':<10} {'Buses':<7}"
+header = f"{'Algorithm':<10} {'Score(best)':<13} {'Score(mean)':<13} {'Score(std)':<12} {'On-Time%':<10} {'Stranded':<10} {'Delay(m)':<10} {'Buses':<7}"
 print(header)
 print("-" * 70)
 
 # Baseline
 b = results["baseline"]
-print(f"{'Baseline':<10} {b['score']:<13.4f} {b['score']:<13.4f} "
+print(f"{'Baseline':<10} {b['score']:<13.4f} {b['score']:<13.4f} {'-':<12} "
       f"{b['on_time_pct']:<10.1f} {b['stranded']:<10} "
       f"{b['avg_delay']:<10.1f} {b['total_buses']:<7}")
 
 for algo in ["GA", "SA", "PSO", "ACO"]:
     r = results[algo]
     best_seed = min(r["seeds"], key=lambda x: x["score"])
-    print(f"{algo:<10} {r['best_score']:<13.4f} {r['mean_score']:<13.4f} "
+    print(f"{algo:<10} {r['best_score']:<13.4f} {r['mean_score']:<13.4f} {r['std_score']:<12.4f} "
           f"{r['mean_on_time_pct']:<10.1f} {best_seed['stranded']:<10} "
           f"{best_seed['avg_delay']:<10.1f} {best_seed['total_buses']:<7}")
 
@@ -230,11 +247,12 @@ output = {
         "seeds": SEEDS,
         "reference": "Díaz-Ramírez et al. (2022) doi:10.1016/j.cie.2022.108101",
         # Feedback #7: บันทึก parameter + hardware ให้เปรียบเทียบย้อนกลับได้
+        "eval_budget": EVAL_BUDGET,
         "algo_params": {
-            "GA":  {"generations": GA_GENS},
-            "SA":  {"max_iter": SA_ITERS},
-            "PSO": {"max_iter": PSO_ITERS},
-            "ACO": {"iterations": ACO_ITERS, "num_ants": 10},
+            "GA":  {"population_size": GA_POP, "generations": GA_GENS},
+            "SA":  {"max_iter": SA_ITERS, "t_init": SA_T_INIT, "cooling_rate": round(SA_COOLING, 6)},
+            "PSO": {"num_particles": PSO_PARTICLES, "max_iter": PSO_ITERS},
+            "ACO": {"iterations": ACO_ITERS, "num_ants": ACO_ANTS, "eval_runs": 1},
         },
         "hardware": {
             "platform": platform.platform(),

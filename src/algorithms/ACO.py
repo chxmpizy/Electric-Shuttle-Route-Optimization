@@ -99,6 +99,7 @@ def run_aco(
     alpha: float = ACO_ALPHA,
     beta: float = ACO_BETA,
     evaporation: float = ACO_EVAPORATION,
+    eval_runs: int = 3,
 ) -> tuple[list[dict], float, list[float]]:
     pheromone: dict = {}
     best_solution = None
@@ -109,7 +110,7 @@ def run_aco(
         scores = []
         for _ in range(num_ants):
             sol = construct_solution(pheromone, ctx, alpha=alpha, beta=beta)
-            score = evaluate(sol, ctx, runs=3)
+            score = evaluate(sol, ctx, runs=eval_runs)
             ants.append(sol)
             scores.append(score)
             if score < best_score:

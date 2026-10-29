@@ -50,6 +50,7 @@ graph TD
 | **05** | [[05_Implementation_Roadmap_and_Action_Plan\|05. Implementation Action Plan]] | แผนปฏิบัติงานทีละขั้น (Phase 1–6), การแก้โค้ดแต่ละโมดูล และ Checklist ตรวจสอบ | `Ready to Execute` |
 | **06** | [[06_Input_and_Assumptions\|06. Input Data & Assumptions]] | แยก Input เป็น ข้อมูลจริง / อนุมาน / สมมติ พร้อม source และ impact (ตอบ feedback #4) | `Completed` |
 | **07** | [[07_Fitness_Weights_Rationale\|07. Fitness Weights Rationale & Sensitivity]] | เหตุผลของน้ำหนัก fitness + ผลทดลอง sensitivity 8 แบบ (ตอบ feedback #1) | `Completed` |
+| **08** | [[08_Fair_Benchmark_and_Fleet_Experiment\|08. Fair Benchmark & Fleet Sizing Experiment]] | แก้บั๊ก seed/repair, benchmark 500 evals × 5 seeds, ผลทดลองลดจำนวนรถ | `Completed` |
 
 ---
 

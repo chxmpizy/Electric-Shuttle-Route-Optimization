@@ -115,9 +115,8 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
         num_bus = max(ctx.min_per_route, min(ctx.max_per_route, gene.get("num_bus", ctx.min_per_route)))
         start = max(420, min(450, gene.get("startTime", 420)))
         end = max(1080, min(1260, gene.get("endTime", 1260)))
-
-        if end > ctx.end_time:
-            continue
+        # ไม่ทิ้ง route ที่ endTime เลย ctx.end_time (simulation window) —
+        # เวลาให้บริการ (ขั้นต่ำ 18:00) ยาวกว่า window ได้ตามปกติ
         repaired.append({
             "path": path,
             "num_bus": num_bus,
@@ -141,8 +140,8 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             "num_bus": num_bus,
             "cycle_time": cycle_time,
             "headway": round(cycle_time / num_bus, 2),
-            "startTime": ctx.start_time,
-            "endTime": ctx.end_time,
+            "startTime": max(420, min(450, ctx.start_time)),
+            "endTime": max(1080, min(1260, ctx.end_time)),
         })
     return repaired[:ctx.num_routes]
 def crossover(parent1: list[dict], parent2: list[dict], ctx: RouteContext) -> list[dict]:

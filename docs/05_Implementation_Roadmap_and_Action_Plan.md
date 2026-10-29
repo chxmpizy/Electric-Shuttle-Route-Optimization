@@ -214,8 +214,8 @@ def multi_objective_fitness(result: dict, total_buses: int) -> float:
 | 2 | Passenger Object บันทึกเวลาเรียนและการเดิน | `Passenger.py` | คำนวณ `delay_minutes` และ `is_on_time` ได้ | ⏳ รอทำ Phase 1 |
 | 3 | เวลาเดินทางระหว่างป้ายอิงจากระยะทางจริง | `engine.py`, `graph.py` | ดึง Edge Weight จาก Graph ไม่หารเฉลี่ย | ⏳ รอทำ Phase 2 |
 | 4 | Fitness Function ลงโทษคนตกค้างและคนสาย | `fitness.py` | ถ้าปล่อยคนตกค้าง คะแนนต้องแย่ลงอย่างมีนัยสำคัญ | ⏳ รอทำ Phase 3 |
-| 5 | Benchmark ทำซ้ำ 5 Runs บน Budget เดียวกัน | `run_benchmark.py` | มี Mean/Std และกราฟการลู่เข้า | ⏳ รอทำ Phase 4 |
+| 5 | Benchmark ทำซ้ำ 5 Runs บน Budget เดียวกัน | `cs_benchmark.py` | มี Mean/Std และกราฟการลู่เข้า | 🟢 เสร็จแล้ว (500 evals × 5 seeds, ดู [[08_Fair_Benchmark_and_Fleet_Experiment\|08]]) |
 | 6 | มีชุดทดลองนำร่อง CS100 ตรวจสอบได้ง่าย | `test_cs100_pilot.py` | ยืนยันผลเบื้องต้นก่อนรันข้อมูลจริงทั้งระบบ | ⏳ รอทำ Phase 4 |
-| 7 | มีผลการทดลองลดจำนวนรถ (Fleet Reduction) | `fleet_experiment.py` | มีกราฟ Trade-off ระหว่างจำนวนรถกับระดับบริการ | ⏳ รอทำ Phase 5 |
+| 7 | มีผลการทดลองลดจำนวนรถ (Fleet Reduction) | `fleet_experiment.py` | มีกราฟ Trade-off ระหว่างจำนวนรถกับระดับบริการ | 🟢 เสร็จแล้ว (`fleet_tradeoff.png`, ดู [[08_Fair_Benchmark_and_Fleet_Experiment\|08]]) |
 | 8 | หน้าเว็บแดชบอร์ดแสดงกราฟ Punctuality | `web/src/components/` | มีกราฟแท่ง/โดนัทแสดง สัดส่วน ทัน/สาย | ⏳ รอทำ Phase 6 |
 | 9 | SUMO-GUI รันได้เสถียรบน Mac / XQuartz | `src/models/sumo.py` | รันผ่าน API `/api/simulation/run-sumo` ได้ไม่แครช | 🟢 เสร็จแล้ว |

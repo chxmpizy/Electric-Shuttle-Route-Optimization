@@ -98,8 +98,9 @@ def run_simulation(
     -------
     dict ของสถิติการจำลอง รวมถึง on_time_rate, avg_delay, stranded_count
     """
-    if seed is not None:
-        random.seed(seed)
+    # ใช้ RNG เฉพาะของ simulation — ห้าม random.seed() ตัว global เพราะจะรีเซ็ต
+    # ลำดับสุ่มของ algorithm ทุกครั้งที่ evaluate ทำให้ seed ของ benchmark ไม่มีผล
+    rng = random.Random(seed)
 
     # ─── 1. สร้างคิวผู้โดยสารแต่ละป้าย ────────────────────────────────────
     queues: dict[str, list[Passenger]] = {stop: [] for stop in stops}
@@ -131,13 +132,13 @@ def run_simulation(
                 continue
             hour = t / 60
             demand_prob = 0.8 if 7.5 <= hour < 10 or 11.5 <= hour < 13.5 else 0.25
-            if random.random() >= demand_prob:
+            if rng.random() >= demand_prob:
                 continue
             wts = [STOP_WEIGHTS.get(s, 100) for s in stops]
-            origin = random.choices(stops, weights=wts, k=1)[0]
-            dest = random.choices(stops, weights=wts, k=1)[0]
+            origin = rng.choices(stops, weights=wts, k=1)[0]
+            dest = rng.choices(stops, weights=wts, k=1)[0]
             while dest == origin:
-                dest = random.choices(stops, weights=wts, k=1)[0]
+                dest = rng.choices(stops, weights=wts, k=1)[0]
             p = Passenger(
                 passenger_id=pid,
                 origin=origin,
