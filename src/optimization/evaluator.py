@@ -20,6 +20,20 @@ if TYPE_CHECKING:
     from data.timetable import PassengerDemand
 
 
+# นับจำนวนครั้งที่รัน simulation เพื่อประเมิน fitness — ใช้ยืนยัน evaluation budget
+# ให้เท่ากันทุก algorithm ใน benchmark
+_eval_count = 0
+
+
+def reset_eval_count() -> None:
+    global _eval_count
+    _eval_count = 0
+
+
+def get_eval_count() -> int:
+    return _eval_count
+
+
 def evaluate(
     chromosome: list[dict],
     ctx: RouteContext,
@@ -64,8 +78,10 @@ def evaluate(
     ]
     total_buses = sum(gene["num_bus"] for gene in chromosome)
 
+    global _eval_count
     scores = []
     for run_i in range(runs):
+        _eval_count += 1
         run_seed = (seed + run_i) if seed is not None else None
         result = run_simulation(
             active_routes=active_routes,

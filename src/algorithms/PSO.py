@@ -2,7 +2,6 @@
 import random
 from config.settings import PSO_C1, PSO_C2, PSO_MAX_ITER, PSO_NUM_PARTICLES, PSO_W
 from data.graph import calculate_cycle_time
-from optimization.chromosome import repair
 from optimization.context import RouteContext
 from optimization.evaluator import evaluate
 class Particle:
@@ -42,7 +41,9 @@ def discretize(position: list[float], fixed_routes: list[dict], ctx: RouteContex
             "startTime": start_time,
             "endTime": end_time,
         })
-    return repair(solution, ctx)
+    # ไม่เรียก repair(): PSO ค้นหาแค่ num_bus/startTime บน fixed routes ซึ่งเป็น loop
+    # (ป้ายแรก = ป้ายสุดท้าย) และมีคู่วิ่งสวนทาง — repair() จะทิ้ง route เหล่านี้แล้วสุ่มใหม่
+    return solution
 def run_pso(
     fixed_routes: list[dict],
     ctx: RouteContext,
