@@ -36,7 +36,6 @@ export default function MobilityPanel({
 }: MobilityPanelProps) {
   const hasData = busStats.length > 0 || timeseries.length > 0;
 
-  // ─── Passenger status breakdown ─────────────────────────────────────────
   const total = totalPassengers ?? 0;
   const stranded = strandedPassengers ?? 0;
   const late = latePassengers ?? 0;
@@ -46,240 +45,289 @@ export default function MobilityPanel({
       : Math.max(0, total - stranded - late);
   const uncountedServed = Math.max(0, total - stranded - late - onTimeCount);
 
-  // ─── Bus utilization histogram ──────────────────────────────────────────
   const sortedBuses = useMemo(
     () => [...busStats].sort((a, b) => b.utilization_pct - a.utilization_pct),
     [busStats]
   );
   const maxUtil = sortedBuses[0]?.utilization_pct ?? 0;
 
-  // ─── Top O-D flows ──────────────────────────────────────────────────────
   const topOD = useMemo(() => odMatrix.slice(0, 12), [odMatrix]);
   const maxOD = topOD[0]?.count ?? 0;
 
-  // ─── Time-series chart ──────────────────────────────────────────────────
   const seriesStats = useMemo(() => {
     if (!timeseries.length) return null;
     const maxWaiting = Math.max(...timeseries.map((p) => p.waiting), 1);
     const maxOnBus = Math.max(...timeseries.map((p) => p.on_bus), 1);
     const maxArrived = Math.max(...timeseries.map((p) => p.arrived), 1);
     const yMax = Math.max(maxWaiting, maxOnBus, maxArrived, 1);
-    return { yMax, maxWaiting, maxOnBus, maxArrived };
+    return { yMax };
   }, [timeseries]);
 
   if (!hasData) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-2">
-          🚶 Mobility Panel (การเดินทางของผู้โดยสาร)
+      <section className="bg-white rounded-2xl border border-neutral-200 p-6">
+        <h3 className="text-[15px] font-semibold text-neutral-900">
+          การเดินทางของผู้โดยสาร
         </h3>
-        <p className="text-sm text-slate-500">
-          ยังไม่มีข้อมูลการเดินทาง — กดปุ่ม <span className="font-semibold">Run Live Simulation</span>{" "}
-          เพื่อให้ API ส่ง bus_stats, od_matrix และ mobility_timeseries กลับ
+        <p className="text-[13px] text-neutral-500 mt-2">
+          ยังไม่มีข้อมูล — กด{" "}
+          <span className="font-medium text-neutral-800">Run</span>{" "}
+          เพื่อให้ API ส่งข้อมูล mobility
         </p>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* ─── Overview Cards ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatCard
-          label="ผู้โดยสารรวม"
-          value={total.toString()}
-          hint="จำนวนผู้โดยสารทั้งหมดในช่วงจำลอง"
-          tone="slate"
-        />
-        <StatCard
-          label="ถึงทันเรียน"
-          value={typeof onTimeRatePct === "number" ? `${onTimeRatePct.toFixed(1)}%` : "—"}
-          hint="เข้าเรียนก่อนเวลาที่กำหนด"
-          tone="emerald"
-        />
-        <StatCard
-          label="สาย"
-          value={late.toString()}
-          hint="ถึงปลายทางหลังเวลาเรียน"
-          tone="amber"
-        />
-        <StatCard
-          label="ตกค้าง"
-          value={stranded.toString()}
-          hint="ยังรอ + ค้างบนรถ"
-          tone="rose"
-        />
-        <StatCard
-          label="Fleet util"
-          value={typeof fleetUtilPct === "number" ? `${fleetUtilPct.toFixed(1)}%` : "—"}
-          hint={`รถทั้งหมด ${totalBuses ?? "?"} คัน`}
-          tone="blue"
-        />
-      </div>
-
-      {/* ─── Passenger status breakdown bar ─────────────────────────── */}
-      {total > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h4 className="text-sm font-bold text-slate-700 mb-3">
-            📊 สัดส่วนผู้โดยสาร (Breakdown)
-          </h4>
-          <div className="h-6 w-full rounded-lg overflow-hidden flex border border-slate-200">
-            <SegBar count={onTimeCount} total={total} color="bg-emerald-500" label="ทัน" />
-            <SegBar count={late} total={total} color="bg-amber-500" label="สาย" />
-            <SegBar count={uncountedServed} total={total} color="bg-sky-400" label="ถึง (ไม่มีเวลาเรียน)" />
-            <SegBar count={stranded} total={total} color="bg-rose-500" label="ตกค้าง" />
-          </div>
-          <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-600">
-            <LegendDot color="bg-emerald-500" label={`ทัน ${onTimeCount}`} />
-            <LegendDot color="bg-amber-500" label={`สาย ${late}`} />
-            {uncountedServed > 0 && (
-              <LegendDot color="bg-sky-400" label={`ถึงปลายทาง (ไม่มีคลาส) ${uncountedServed}`} />
-            )}
-            <LegendDot color="bg-rose-500" label={`ตกค้าง ${stranded}`} />
-          </div>
+    <div className="space-y-5">
+      {/* ─── Overview stats ─────────────────────────────────── */}
+      <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="px-6 py-5 border-b border-neutral-100">
+          <h3 className="text-[15px] font-semibold text-neutral-900">
+            ภาพรวมผู้โดยสาร
+          </h3>
+          <p className="text-[12px] text-neutral-500 mt-0.5">
+            รวมผลตลอดการจำลองการเดินรถหนึ่งวันทำการ
+          </p>
         </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-neutral-100">
+          <StatCell
+            label="ผู้โดยสารรวม"
+            value={total.toString()}
+            hint="ทั้งหมดในระบบ"
+          />
+          <StatCell
+            label="ถึงทันเรียน"
+            value={typeof onTimeRatePct === "number" ? `${onTimeRatePct.toFixed(1)}%` : "—"}
+            hint="เข้าเรียนก่อนเวลา"
+            dot="emerald"
+          />
+          <StatCell
+            label="สาย"
+            value={late.toString()}
+            hint="ถึงหลังเวลาเรียน"
+            dot="amber"
+          />
+          <StatCell
+            label="ตกค้าง"
+            value={stranded.toString()}
+            hint="ยังรอ + ค้างบนรถ"
+            dot="red"
+          />
+          <StatCell
+            label="Fleet util"
+            value={typeof fleetUtilPct === "number" ? `${fleetUtilPct.toFixed(1)}%` : "—"}
+            hint={`รถทั้งหมด ${totalBuses ?? "?"} คัน`}
+            dot="indigo"
+          />
+        </div>
+      </section>
+
+      {/* ─── Passenger breakdown bar ────────────────────────── */}
+      {total > 0 && (
+        <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100">
+            <h3 className="text-[15px] font-semibold text-neutral-900">
+              สัดส่วนผู้โดยสาร
+            </h3>
+            <p className="text-[12px] text-neutral-500 mt-0.5">
+              แยกตามสถานะการเดินทางเมื่อสิ้นสุดการจำลอง
+            </p>
+          </div>
+          <div className="px-6 py-5">
+            <div className="h-6 w-full rounded-lg overflow-hidden flex border border-neutral-200 bg-neutral-50">
+              <SegBar count={onTimeCount} total={total} color="bg-emerald-500" />
+              <SegBar count={late} total={total} color="bg-amber-500" />
+              <SegBar count={uncountedServed} total={total} color="bg-neutral-400" />
+              <SegBar count={stranded} total={total} color="bg-red-400" />
+            </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[12px]">
+              <LegendItem swatch="bg-emerald-500" label="ทัน" count={onTimeCount} />
+              <LegendItem swatch="bg-amber-500" label="สาย" count={late} />
+              {uncountedServed > 0 && (
+                <LegendItem
+                  swatch="bg-neutral-400"
+                  label="ถึง (ไม่มีคาบ)"
+                  count={uncountedServed}
+                />
+              )}
+              <LegendItem swatch="bg-red-400" label="ตกค้าง" count={stranded} />
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* ─── Mobility time-series ───────────────────────────────────── */}
+      {/* ─── Time-series ────────────────────────────────────── */}
       {timeseries.length > 0 && seriesStats && (
         <MobilityTimeSeries data={timeseries} yMax={seriesStats.yMax} />
       )}
 
-      {/* ─── Per-bus utilization histogram ─────────────────────────── */}
+      {/* ─── Per-bus utilization ────────────────────────────── */}
       {sortedBuses.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <div className="flex items-center justify-between border-b pb-3 mb-3">
+        <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100 flex items-start justify-between gap-3">
             <div>
-              <h4 className="text-sm font-bold text-slate-800">
-                🚌 Per-bus Utilization (Monitor รถแต่ละคัน)
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                แกน Y: Utilization % = boarded / (trips × capacity) — สูง = ใช้คุ้ม, ต่ำ = วิ่งเปล่า
+              <h3 className="text-[15px] font-semibold text-neutral-900">
+                การใช้งานรถแต่ละคัน
+              </h3>
+              <p className="text-[12px] text-neutral-500 mt-0.5">
+                % Utilization = boarded ÷ (trips × capacity) — สูง = คุ้ม, ต่ำ = วิ่งเปล่า
               </p>
             </div>
-            <span className="text-xs text-slate-500">
+            <span className="text-[11px] font-medium text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-md">
               {sortedBuses.length} คัน
             </span>
           </div>
-          <div className="flex items-end gap-0.5 h-32 overflow-x-auto pb-2">
-            {sortedBuses.map((b) => (
-              <div
-                key={b.bus_id}
-                className="flex-shrink-0 flex flex-col items-center justify-end group relative"
-                style={{ width: `max(10px, ${Math.min(28, 1000 / sortedBuses.length)}px)` }}
-              >
-                <div
-                  className={`w-full rounded-t ${
-                    b.utilization_pct > 15
-                      ? "bg-emerald-500"
-                      : b.utilization_pct > 5
-                      ? "bg-amber-500"
-                      : "bg-rose-400"
-                  } hover:opacity-80 transition`}
-                  style={{
-                    height: `${(b.utilization_pct / Math.max(1, maxUtil)) * 100}%`,
-                    minHeight: b.utilization_pct > 0 ? "2px" : "0px",
-                  }}
-                />
-                {/* Tooltip */}
-                <div className="absolute bottom-full mb-1 hidden group-hover:block z-10 bg-slate-900 text-white text-xs rounded-lg px-2 py-1.5 whitespace-nowrap shadow-lg">
-                  <div className="font-bold">Bus #{b.bus_id}</div>
-                  <div>Util: {b.utilization_pct.toFixed(1)}%</div>
-                  <div>Trips: {b.trips}</div>
-                  <div>Boarded: {b.boarded}</div>
-                  <div>Capacity: {b.capacity}</div>
-                </div>
-              </div>
-            ))}
+
+          <div className="px-6 py-5">
+            <div className="flex items-end gap-0.5 h-32 overflow-x-auto scrollbar-thin pb-2">
+              {sortedBuses.map((b) => {
+                const color =
+                  b.utilization_pct > 15
+                    ? "bg-emerald-500"
+                    : b.utilization_pct > 5
+                    ? "bg-amber-500"
+                    : "bg-red-400";
+                return (
+                  <div
+                    key={b.bus_id}
+                    className="shrink-0 flex flex-col items-center justify-end group relative"
+                    style={{
+                      width: `max(10px, ${Math.min(28, 1000 / sortedBuses.length)}px)`,
+                    }}
+                  >
+                    <div
+                      className={`w-full rounded-t ${color} hover:opacity-80 transition`}
+                      style={{
+                        height: `${(b.utilization_pct / Math.max(1, maxUtil)) * 100}%`,
+                        minHeight: b.utilization_pct > 0 ? "2px" : "0px",
+                      }}
+                    />
+                    <div className="absolute bottom-full mb-1 hidden group-hover:block z-10 bg-neutral-900 text-white text-[11px] rounded-md px-2 py-1.5 whitespace-nowrap shadow-lg">
+                      <div className="font-semibold">Bus #{b.bus_id}</div>
+                      <div className="tabular-nums">
+                        Util: {b.utilization_pct.toFixed(1)}%
+                      </div>
+                      <div className="tabular-nums">Trips: {b.trips}</div>
+                      <div className="tabular-nums">
+                        Boarded: {b.boarded}/{b.capacity}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-5 text-[11px] text-neutral-500 mt-3">
+              <LegendItem swatch="bg-emerald-500" label=">15% ใช้คุ้ม" />
+              <LegendItem swatch="bg-amber-500" label="5–15% ปานกลาง" />
+              <LegendItem swatch="bg-red-400" label="<5% ใช้ต่ำ" />
+            </div>
           </div>
-          <div className="flex gap-4 text-xs text-slate-600 mt-2">
-            <LegendDot color="bg-emerald-500" label=">15% (ใช้คุ้ม)" />
-            <LegendDot color="bg-amber-500" label="5–15% (ปานกลาง)" />
-            <LegendDot color="bg-rose-400" label="<5% (ใช้ต่ำ)" />
-          </div>
-        </div>
+        </section>
       )}
 
-      {/* ─── Top O-D Flows ─────────────────────────────────────────── */}
+      {/* ─── Top OD ─────────────────────────────────────────── */}
       {topOD.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <div className="flex items-center justify-between border-b pb-3 mb-3">
+        <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100 flex items-start justify-between gap-3">
             <div>
-              <h4 className="text-sm font-bold text-slate-800">
-                🗺️ Top Origin-Destination Flows (ต้นทาง → ปลายทาง)
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                จำนวนผู้โดยสารแยกตามคู่ป้ายต้นทาง-ปลายทาง (เรียงจากมากไปน้อย)
+              <h3 className="text-[15px] font-semibold text-neutral-900">
+                เส้นทางที่มีผู้โดยสารมากที่สุด
+              </h3>
+              <p className="text-[12px] text-neutral-500 mt-0.5">
+                คู่ป้ายต้นทาง → ปลายทาง (เรียงจากมากไปน้อย)
               </p>
             </div>
-            <span className="text-xs text-slate-500">
-              {odMatrix.length} คู่ป้าย
+            <span className="text-[11px] font-medium text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-md">
+              {odMatrix.length} คู่
             </span>
           </div>
-          <div className="space-y-1.5">
+
+          <div className="px-6 py-5 space-y-2">
             {topOD.map((od) => (
               <div
                 key={`${od.from}-${od.to}`}
-                className="flex items-center gap-3 text-sm"
+                className="flex items-center gap-3 text-[12px]"
               >
-                <div className="w-56 flex items-center gap-1 text-slate-700 truncate">
-                  <span className="font-medium">{shortName(od.from)}</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="font-medium">{shortName(od.to)}</span>
+                <div className="w-56 flex items-center gap-1.5 shrink-0">
+                  <span className="font-medium text-neutral-800 truncate">
+                    {shortName(od.from)}
+                  </span>
+                  <span className="text-neutral-400 shrink-0">→</span>
+                  <span className="font-medium text-neutral-800 truncate">
+                    {shortName(od.to)}
+                  </span>
                 </div>
-                <div className="flex-1 bg-slate-100 rounded h-5 overflow-hidden relative">
+                <div className="flex-1 h-5 bg-neutral-100 rounded overflow-hidden relative">
                   <div
-                    className="bg-blue-500 h-full"
+                    className="bg-indigo-500 h-full transition-all duration-500"
                     style={{ width: `${(od.count / Math.max(1, maxOD)) * 100}%` }}
                   />
-                  <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-bold text-slate-800">
+                  <span className="absolute inset-0 flex items-center justify-end pr-2 text-[11px] font-semibold text-neutral-800 tabular-nums">
                     {od.count}
                   </span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────
+   Sub-components
+   ────────────────────────────────────────────────────────── */
 
-function StatCard({
+function StatCell({
   label,
   value,
   hint,
-  tone,
+  dot,
 }: {
   label: string;
   value: string;
   hint: string;
-  tone: "slate" | "emerald" | "amber" | "rose" | "blue";
+  dot?: "emerald" | "amber" | "red" | "indigo";
 }) {
-  const toneClass = {
-    slate: "bg-slate-50 border-slate-200 text-slate-800",
-    emerald: "bg-emerald-50 border-emerald-200 text-emerald-900",
-    amber: "bg-amber-50 border-amber-200 text-amber-900",
-    rose: "bg-rose-50 border-rose-200 text-rose-900",
-    blue: "bg-blue-50 border-blue-200 text-blue-900",
-  }[tone];
+  const dotClass = {
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
+    red: "bg-red-500",
+    indigo: "bg-indigo-500",
+  }[dot || "emerald"];
+
   return (
-    <div className={`rounded-xl border p-3 ${toneClass}`}>
-      <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">{label}</div>
-      <div className="text-2xl font-bold mt-0.5">{value}</div>
-      <div className="text-[11px] opacity-70 mt-0.5">{hint}</div>
+    <div className="px-5 py-4">
+      <div className="flex items-center gap-1.5">
+        {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />}
+        <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">
+          {label}
+        </span>
+      </div>
+      <div className="text-[22px] font-semibold text-neutral-900 mt-1.5 tabular-nums leading-none">
+        {value}
+      </div>
+      <div className="text-[11px] text-neutral-500 mt-1.5">{hint}</div>
     </div>
   );
 }
 
-function SegBar({ count, total, color }: { count: number; total: number; color: string; label: string }) {
+function SegBar({
+  count,
+  total,
+  color,
+}: {
+  count: number;
+  total: number;
+  color: string;
+}) {
   if (count <= 0) return null;
   const pct = (count / total) * 100;
   return (
     <div
-      className={`${color} h-full flex items-center justify-center text-[11px] font-bold text-white`}
+      className={`${color} h-full flex items-center justify-center text-[11px] font-semibold text-white tabular-nums`}
       style={{ width: `${pct}%` }}
     >
       {pct > 6 ? count : ""}
@@ -287,22 +335,43 @@ function SegBar({ count, total, color }: { count: number; total: number; color: 
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendItem({
+  swatch,
+  label,
+  count,
+}: {
+  swatch: string;
+  label: string;
+  count?: number;
+}) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`inline-block w-3 h-3 rounded ${color}`} />
+    <span className="inline-flex items-center gap-1.5 text-neutral-600">
+      <span className={`inline-block w-2.5 h-2.5 rounded-sm ${swatch}`} />
       <span>{label}</span>
+      {typeof count === "number" && (
+        <span className="font-semibold text-neutral-900 tabular-nums">{count}</span>
+      )}
     </span>
   );
 }
 
-function MobilityTimeSeries({ data, yMax }: { data: MobilityPoint[]; yMax: number }) {
-  const W = 720;
-  const H = 240;
-  const PAD_L = 48;
-  const PAD_R = 16;
-  const PAD_T = 16;
-  const PAD_B = 32;
+/* ──────────────────────────────────────────────────────────
+   Time-series line chart
+   ────────────────────────────────────────────────────────── */
+
+function MobilityTimeSeries({
+  data,
+  yMax,
+}: {
+  data: MobilityPoint[];
+  yMax: number;
+}) {
+  const W = 760;
+  const H = 260;
+  const PAD_L = 52;
+  const PAD_R = 20;
+  const PAD_T = 20;
+  const PAD_B = 40;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
 
@@ -332,86 +401,87 @@ function MobilityTimeSeries({ data, yMax }: { data: MobilityPoint[]; yMax: numbe
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-      <div className="flex items-start justify-between border-b pb-3 mb-3">
+    <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="px-6 py-5 border-b border-neutral-100 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-sm font-bold text-slate-800">
-            📈 Passenger Flow Over Time (คน รอ / บนรถ / ถึงปลายทาง)
-          </h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            จำนวนผู้โดยสารตามเวลาจำลอง (bucket 10 นาที) — ช่วยดูว่าป้ายติดคอขวดช่วงไหน
+          <h3 className="text-[15px] font-semibold text-neutral-900">
+            การเคลื่อนไหวของผู้โดยสารตามเวลา
+          </h3>
+          <p className="text-[12px] text-neutral-500 mt-0.5">
+            จำนวนคนที่รอป้าย, อยู่บนรถ, และถึงปลายทาง (bucket 10 นาที)
           </p>
         </div>
-        <div className="flex gap-3 text-xs">
-          <LegendDot color="bg-amber-500" label="รอที่ป้าย" />
-          <LegendDot color="bg-blue-500" label="บนรถ" />
-          <LegendDot color="bg-emerald-500" label="ถึงแล้ว (สะสม)" />
+        <div className="flex gap-5 text-[11px]">
+          <LegendItem swatch="bg-amber-500" label="รอที่ป้าย" />
+          <LegendItem swatch="bg-indigo-500" label="อยู่บนรถ" />
+          <LegendItem swatch="bg-emerald-500" label="ถึงแล้ว" />
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
-        {/* Gridlines + Y-labels */}
-        {ticks.map((t, i) => (
-          <g key={i}>
-            <line
-              x1={PAD_L}
-              y1={t.y}
-              x2={W - PAD_R}
-              y2={t.y}
-              stroke="#e2e8f0"
-              strokeDasharray="3 3"
-            />
+      <div className="px-6 py-5">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+          {ticks.map((t, i) => (
+            <g key={i}>
+              <line
+                x1={PAD_L}
+                y1={t.y}
+                x2={W - PAD_R}
+                y2={t.y}
+                stroke="#e5e5e5"
+                strokeDasharray="3 4"
+              />
+              <text
+                x={PAD_L - 10}
+                y={t.y + 4}
+                textAnchor="end"
+                fill="#737373"
+                fontSize="11"
+              >
+                {Math.round(t.v)}
+              </text>
+            </g>
+          ))}
+
+          {xTicks.map((t, i) => (
             <text
-              x={PAD_L - 8}
-              y={t.y + 4}
-              textAnchor="end"
-              className="fill-slate-500"
-              fontSize="10"
+              key={i}
+              x={t.x}
+              y={H - PAD_B + 18}
+              textAnchor="middle"
+              fill="#737373"
+              fontSize="11"
             >
-              {Math.round(t.v)}
+              {t.label}
             </text>
-          </g>
-        ))}
+          ))}
 
-        {/* X labels (HH:MM) */}
-        {xTicks.map((t, i) => (
           <text
-            key={i}
-            x={t.x}
-            y={H - PAD_B + 16}
+            x={W / 2}
+            y={H - 6}
             textAnchor="middle"
-            className="fill-slate-500"
-            fontSize="10"
+            fill="#525252"
+            fontSize="11"
+            fontWeight="500"
           >
-            {t.label}
+            เวลา (HH:MM)
           </text>
-        ))}
+          <text
+            x={-H / 2}
+            y={16}
+            textAnchor="middle"
+            transform="rotate(-90)"
+            fill="#525252"
+            fontSize="11"
+            fontWeight="500"
+          >
+            จำนวนผู้โดยสาร
+          </text>
 
-        <text
-          x={W / 2}
-          y={H - 4}
-          textAnchor="middle"
-          className="fill-slate-600 font-semibold"
-          fontSize="11"
-        >
-          เวลา (HH:MM)
-        </text>
-        <text
-          x={-H / 2}
-          y={14}
-          textAnchor="middle"
-          transform="rotate(-90)"
-          className="fill-slate-600 font-semibold"
-          fontSize="11"
-        >
-          จำนวนผู้โดยสาร
-        </text>
-
-        {/* Lines */}
-        <path d={pathArrived} fill="none" stroke="#10b981" strokeWidth="2" />
-        <path d={pathOnBus} fill="none" stroke="#3b82f6" strokeWidth="2" />
-        <path d={pathWait} fill="none" stroke="#f59e0b" strokeWidth="2" />
-      </svg>
-    </div>
+          <path d={pathArrived} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={pathOnBus} fill="none" stroke="#4f46e5" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={pathWait} fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+      </div>
+    </section>
   );
 }

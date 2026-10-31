@@ -25,24 +25,25 @@ export default function ConvergenceChart({
 
   if (!history || history.length === 0 || !stats) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-2">
-          📉 Convergence Curve (เส้นลู่เข้าของอัลกอริทึม)
+      <section className="bg-white rounded-2xl border border-neutral-200 p-6">
+        <h3 className="text-[15px] font-semibold text-neutral-900">
+          การลู่เข้าของอัลกอริทึม
         </h3>
-        <p className="text-sm text-slate-500">
-          ยังไม่มีประวัติการค้นหา — กดปุ่ม <span className="font-semibold">Run Live Simulation</span>{" "}
-          เพื่อเก็บ history[] จากการเรียก API
+        <p className="text-[13px] text-neutral-500 mt-2">
+          ยังไม่มีประวัติการค้นหา — กด{" "}
+          <span className="font-medium text-neutral-800">Run</span>{" "}
+          เพื่อเก็บข้อมูลจาก API
         </p>
-      </div>
+      </section>
     );
   }
 
-  const W = 720;
-  const H = 240;
-  const PAD_L = 48;
-  const PAD_R = 16;
-  const PAD_T = 16;
-  const PAD_B = 32;
+  const W = 760;
+  const H = 260;
+  const PAD_L = 52;
+  const PAD_R = 20;
+  const PAD_T = 20;
+  const PAD_B = 40;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
 
@@ -53,14 +54,15 @@ export default function ConvergenceChart({
   const xStep = history.length > 1 ? innerW / (history.length - 1) : 0;
 
   const toX = (i: number) => PAD_L + i * xStep;
-  const toY = (v: number) =>
-    PAD_T + innerH - ((v - yMin) / yRange) * innerH;
+  const toY = (v: number) => PAD_T + innerH - ((v - yMin) / yRange) * innerH;
 
   const pathD = history
     .map((v, i) => `${i === 0 ? "M" : "L"} ${toX(i).toFixed(2)} ${toY(v).toFixed(2)}`)
     .join(" ");
 
-  const areaD = `${pathD} L ${toX(history.length - 1).toFixed(2)} ${(PAD_T + innerH).toFixed(2)} L ${toX(0).toFixed(2)} ${(PAD_T + innerH).toFixed(2)} Z`;
+  const areaD = `${pathD} L ${toX(history.length - 1).toFixed(2)} ${(
+    PAD_T + innerH
+  ).toFixed(2)} L ${toX(0).toFixed(2)} ${(PAD_T + innerH).toFixed(2)} Z`;
 
   const yTicks = 4;
   const ticks = Array.from({ length: yTicks + 1 }, (_, i) => {
@@ -74,149 +76,170 @@ export default function ConvergenceChart({
     return { idx, x: toX(idx) };
   });
 
+  const improved = stats.improvedPct > 0;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
-        <div>
-          <h3 className="text-lg font-bold text-slate-800">
-            📉 Convergence Curve (เส้นลู่เข้าของ {algorithm.toUpperCase()})
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Best-so-far objective ตามจำนวนรอบการค้นหา — ค่ายิ่งต่ำยิ่งดี
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs">
-          <span>
-            <span className="text-slate-500">Iters:</span>{" "}
-            <span className="font-bold text-slate-800">{stats.iters}</span>
-          </span>
-          <span>
-            <span className="text-slate-500">Start:</span>{" "}
-            <span className="font-bold text-slate-800">{stats.first.toFixed(3)}</span>
-          </span>
-          <span>
-            <span className="text-slate-500">Best:</span>{" "}
-            <span className="font-bold text-emerald-700">{stats.best.toFixed(3)}</span>
-          </span>
-          <span>
-            <span className="text-slate-500">Δ:</span>{" "}
-            <span
-              className={`font-bold ${
-                stats.improvedPct > 0 ? "text-emerald-700" : "text-slate-500"
-              }`}
-            >
-              {stats.improvedPct > 0 ? "−" : ""}
-              {Math.abs(stats.improvedPct).toFixed(1)}%
-            </span>
-          </span>
-          {typeof elapsedSec === "number" && elapsedSec > 0 && (
-            <span>
-              <span className="text-slate-500">⏱️</span>{" "}
-              <span className="font-bold text-slate-800">{elapsedSec.toFixed(2)}s</span>
-            </span>
-          )}
+    <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-neutral-100">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[15px] font-semibold text-neutral-900">
+              การลู่เข้าของ {algorithm.toUpperCase()}
+            </h3>
+            <p className="text-[12px] text-neutral-500 mt-0.5">
+              ค่าวัตถุประสงค์ (objective) ที่ดีที่สุด ณ แต่ละรอบการค้นหา — ยิ่งต่ำยิ่งดี
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-baseline gap-5 text-[12px]">
+            <StatCell label="รอบที่รัน" value={`${stats.iters}`} />
+            <StatCell label="เริ่มต้น" value={stats.first.toFixed(3)} />
+            <StatCell
+              label="ดีที่สุด"
+              value={stats.best.toFixed(3)}
+              highlight="emerald"
+            />
+            <StatCell
+              label="ปรับปรุง"
+              value={`${improved ? "−" : ""}${Math.abs(stats.improvedPct).toFixed(1)}%`}
+              highlight={improved ? "emerald" : undefined}
+            />
+            {typeof elapsedSec === "number" && elapsedSec > 0 && (
+              <StatCell label="ใช้เวลา" value={`${elapsedSec.toFixed(2)}s`} />
+            )}
+          </div>
         </div>
       </div>
 
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full h-auto"
-        role="img"
-        aria-label={`Convergence curve for ${algorithm}`}
-      >
-        <defs>
-          <linearGradient id="convGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
+      {/* Chart */}
+      <div className="px-6 py-5">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full h-auto"
+          role="img"
+          aria-label={`Convergence curve for ${algorithm}`}
+        >
+          <defs>
+            <linearGradient id="convGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-        {/* Gridlines + Y-axis labels */}
-        {ticks.map((t, i) => (
-          <g key={i}>
-            <line
-              x1={PAD_L}
-              y1={t.y}
-              x2={W - PAD_R}
-              y2={t.y}
-              stroke="#e2e8f0"
-              strokeDasharray="3 3"
-            />
+          {/* Gridlines + Y-labels */}
+          {ticks.map((t, i) => (
+            <g key={i}>
+              <line
+                x1={PAD_L}
+                y1={t.y}
+                x2={W - PAD_R}
+                y2={t.y}
+                stroke="#e5e5e5"
+                strokeDasharray="3 4"
+              />
+              <text
+                x={PAD_L - 10}
+                y={t.y + 4}
+                textAnchor="end"
+                fill="#737373"
+                fontSize="11"
+              >
+                {t.v.toFixed(2)}
+              </text>
+            </g>
+          ))}
+
+          {/* X labels */}
+          {xTicks.map((t, i) => (
             <text
-              x={PAD_L - 8}
-              y={t.y + 4}
-              textAnchor="end"
-              className="fill-slate-500"
-              fontSize="10"
+              key={i}
+              x={t.x}
+              y={H - PAD_B + 18}
+              textAnchor="middle"
+              fill="#737373"
+              fontSize="11"
             >
-              {t.v.toFixed(2)}
+              {t.idx}
             </text>
-          </g>
-        ))}
+          ))}
 
-        {/* X-axis labels (iteration index) */}
-        {xTicks.map((t, i) => (
+          {/* Axis titles */}
           <text
-            key={i}
-            x={t.x}
-            y={H - PAD_B + 16}
+            x={W / 2}
+            y={H - 6}
             textAnchor="middle"
-            className="fill-slate-500"
-            fontSize="10"
+            fill="#525252"
+            fontSize="11"
+            fontWeight="500"
           >
-            {t.idx}
+            รอบการค้นหา (iteration)
           </text>
-        ))}
+          <text
+            x={-H / 2}
+            y={16}
+            textAnchor="middle"
+            transform="rotate(-90)"
+            fill="#525252"
+            fontSize="11"
+            fontWeight="500"
+          >
+            Objective (ยิ่งต่ำยิ่งดี)
+          </text>
 
-        {/* Axis labels */}
-        <text
-          x={W / 2}
-          y={H - 4}
-          textAnchor="middle"
-          className="fill-slate-600 font-semibold"
-          fontSize="11"
-        >
-          Iteration
-        </text>
-        <text
-          x={-H / 2}
-          y={14}
-          textAnchor="middle"
-          transform="rotate(-90)"
-          className="fill-slate-600 font-semibold"
-          fontSize="11"
-        >
-          Objective (lower = better)
-        </text>
+          {/* Area */}
+          <path d={areaD} fill="url(#convGrad)" />
 
-        {/* Area fill */}
-        <path d={areaD} fill="url(#convGrad)" />
+          {/* Line */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke="#4f46e5"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
 
-        {/* Line */}
-        <path
-          d={pathD}
-          fill="none"
-          stroke="#2563eb"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+          {/* End-point marker */}
+          <circle
+            cx={toX(history.length - 1)}
+            cy={toY(stats.last)}
+            r="4"
+            fill="#4f46e5"
+            stroke="white"
+            strokeWidth="2"
+          />
+        </svg>
+      </div>
 
-        {/* Final point */}
-        <circle
-          cx={toX(history.length - 1)}
-          cy={toY(stats.last)}
-          r="4"
-          fill="#2563eb"
-          stroke="white"
-          strokeWidth="2"
-        />
-      </svg>
+      {/* Footer hint */}
+      <div className="px-6 py-3 border-t border-neutral-100 text-[12px] text-neutral-500">
+        เส้นที่ลาดลงเร็วและนิ่งแปลว่าอัลกอริทึมเจอคำตอบดีได้ไว —
+        เทียบกับรอบที่รันและเวลาเพื่อวัดประสิทธิภาพ
+      </div>
+    </section>
+  );
+}
 
-      <p className="text-xs text-slate-500">
-        💡 เส้นที่ลู่เข้าสู่ค่าต่ำสุดเร็วและนิ่งหมายถึงอัลกอริทึมค้นเจอคำตอบดีและไม่ขยับต่อ
-        — เปรียบเทียบกับ Iters/⏱️ เพื่อประเมิน efficiency
-      </p>
-    </div>
+function StatCell({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: "emerald";
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5">
+      <span className="text-neutral-500">{label}</span>
+      <span
+        className={`font-semibold tabular-nums ${
+          highlight === "emerald" ? "text-emerald-700" : "text-neutral-900"
+        }`}
+      >
+        {value}
+      </span>
+    </span>
   );
 }

@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --surface: #ffffff;
+  --border: #e5e5e5;
+  --muted: #737373;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Thai", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
+/* ───────── Live bus marker (Leaflet divIcon) ───────── */
+
+.leaflet-marker-icon.live-bus-marker {
+  background: transparent !important;
+  border: none !important;
+  transition: transform 0.9s linear;
+  will-change: transform;
+}
+
+.bus-pill {
+  position: relative;
+  width: 28px;
+  height: 18px;
+  background: var(--bus-color);
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+}
+
+.bus-pill::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--bus-color);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.bus-pill-inner {
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-block;
+}
+
+.bus-pill.approaching::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border: 2px solid var(--bus-color);
+  border-radius: 999px;
+  animation: bus-pulse-ring 1.4s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes bus-pulse-ring {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Highlight selected stop */
+.leaflet-container .stop-marker-selected {
+  filter: drop-shadow(0 0 6px rgba(79, 70, 229, 0.6));
+}
+
+/* Soften Leaflet default UI */
+.leaflet-container {
+  font-family: inherit;
+  background: #e5e7eb;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px;
+  font-size: 12px;
 }

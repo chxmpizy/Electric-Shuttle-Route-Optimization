@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SimulationResult, RouteSchedule } from "@/types/shuttle";
+import Link from "next/link";
+import { SimulationResult } from "@/types/shuttle";
 import { PRECOMPUTED_SCHEDULES } from "@/data/schedules";
 import { DEFAULT_BENCHMARK_DATA } from "@/components/BenchmarkComparisonChart";
 import CampusTransitMap from "@/components/CampusTransitMap";
@@ -11,6 +12,11 @@ import RouteFleetCharts from "@/components/RouteFleetCharts";
 import ConvergenceChart from "@/components/ConvergenceChart";
 import MobilityPanel from "@/components/MobilityPanel";
 import TripPlanner from "@/components/TripPlanner";
+import ScheduleTable from "@/components/ScheduleTable";
+
+/* ──────────────────────────────────────────────────────────────
+   Types & constants
+   ────────────────────────────────────────────────────────────── */
 
 type TabKey =
   | "network"
@@ -22,45 +28,49 @@ type TabKey =
   | "planner"
   | "schedule";
 
+type IconKey =
+  | "map"
+  | "chart"
+  | "trophy"
+  | "trend"
+  | "users"
+  | "clock"
+  | "target"
+  | "list";
+
 interface TabItem {
   key: TabKey;
-  icon: string;
-  labelEn: string;
-  labelTh: string;
-  group: "overview" | "analysis" | "detail" | "student";
+  icon: IconKey;
+  label: string;
+  hint: string;
+  group: "overview" | "analysis" | "student" | "detail";
 }
 
 const TAB_ITEMS: TabItem[] = [
-  { key: "network", icon: "🗺️", labelEn: "Transit Network", labelTh: "โครงข่ายเส้นทาง", group: "overview" },
-  { key: "metrics", icon: "📊", labelEn: "Performance", labelTh: "เปรียบเทียบประสิทธิภาพ", group: "overview" },
-  { key: "benchmark", icon: "🏆", labelEn: "All-Algo Benchmark", labelTh: "เปรียบเทียบทุกตัว", group: "overview" },
-  { key: "convergence", icon: "📉", labelEn: "Convergence", labelTh: "ลู่เข้าของอัลกอริทึม", group: "analysis" },
-  { key: "mobility", icon: "🚶", labelEn: "Mobility", labelTh: "การเดินทางของผู้โดยสาร", group: "analysis" },
-  { key: "fleet", icon: "⏱️", labelEn: "Fleet & Headway", labelTh: "ความถี่และรถ", group: "analysis" },
-  { key: "planner", icon: "🎯", labelEn: "Trip Planner", labelTh: "วางแผนไปเรียนให้ทัน", group: "student" },
-  { key: "schedule", icon: "📋", labelEn: "Route Timetable", labelTh: "ตารางเวลาเทียบท่า", group: "detail" },
+  { key: "network",     icon: "map",    label: "โครงข่ายเส้นทาง",       hint: "แผนที่สายรถ",         group: "overview" },
+  { key: "metrics",     icon: "chart",  label: "เปรียบเทียบประสิทธิภาพ", hint: "Baseline vs Optimized", group: "overview" },
+  { key: "benchmark",   icon: "trophy", label: "เทียบทุกอัลกอริทึม",      hint: "GA / SA / PSO / ACO",   group: "overview" },
+  { key: "convergence", icon: "trend",  label: "การลู่เข้าของอัลกอริทึม", hint: "Convergence curve",    group: "analysis" },
+  { key: "mobility",    icon: "users",  label: "การเดินทางของผู้โดยสาร",  hint: "Mobility & OD",         group: "analysis" },
+  { key: "fleet",       icon: "clock",  label: "ความถี่และจำนวนรถ",       hint: "Headway & fleet",      group: "analysis" },
+  { key: "planner",     icon: "target", label: "วางแผนไปเรียนให้ทัน",     hint: "Trip planner",         group: "student" },
+  { key: "schedule",    icon: "list",   label: "ตารางเวลาเทียบท่า",       hint: "Route timetable",      group: "detail" },
 ];
 
 const GROUP_LABELS: Record<TabItem["group"], string> = {
-  overview: "ภาพรวม (Overview)",
-  analysis: "วิเคราะห์เชิงลึก (Analysis)",
-  student: "สำหรับผู้โดยสาร (Student)",
-  detail: "รายละเอียด (Details)",
+  overview: "ภาพรวม",
+  analysis: "วิเคราะห์เชิงลึก",
+  student: "สำหรับผู้โดยสาร",
+  detail: "รายละเอียด",
 };
 
-const ALGO_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "baseline", label: "Baseline — เส้นทางเดิม" },
-  { value: "ga", label: "Genetic Algorithm (GA)" },
-  { value: "sa", label: "Simulated Annealing (SA)" },
-  { value: "pso", label: "Particle Swarm (PSO)" },
-  { value: "aco", label: "Ant Colony (ACO)" },
+const ALGO_OPTIONS: Array<{ value: string; label: string; full: string }> = [
+  { value: "baseline", label: "Baseline", full: "เส้นทางเดิม" },
+  { value: "ga",       label: "GA",       full: "Genetic Algorithm" },
+  { value: "sa",       label: "SA",       full: "Simulated Annealing" },
+  { value: "pso",      label: "PSO",      full: "Particle Swarm" },
+  { value: "aco",      label: "ACO",      full: "Ant Colony" },
 ];
-
-const formatTime = (minutes: number) => {
-  const h = Math.floor(minutes / 60).toString().padStart(2, "0");
-  const m = Math.round(minutes % 60).toString().padStart(2, "0");
-  return `${h}:${m}`;
-};
 
 const getPrecomputedResult = (mode: string): SimulationResult => {
   const baseBench = DEFAULT_BENCHMARK_DATA.baseline;
@@ -82,6 +92,119 @@ const getPrecomputedResult = (mode: string): SimulationResult => {
     data_source: "demo",
   };
 };
+
+/* ──────────────────────────────────────────────────────────────
+   Monochrome line icons (Lucide-style, inline — no deps)
+   ────────────────────────────────────────────────────────────── */
+
+type SvgProps = { className?: string };
+const svgBase =
+  "shrink-0 stroke-current fill-none [stroke-linecap:round] [stroke-linejoin:round]";
+
+function IconMap(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2Z" />
+      <path d="M9 3v16M15 5v16" />
+    </svg>
+  );
+}
+function IconChart(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M3 3v18h18" />
+      <path d="M7 15v3M12 10v8M17 6v12" />
+    </svg>
+  );
+}
+function IconTrophy(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+      <path d="M17 6h3a3 3 0 0 1-3 3M7 6H4a3 3 0 0 0 3 3" />
+      <path d="M10 15h4v3h-4zM8 21h8" />
+    </svg>
+  );
+}
+function IconTrend(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M3 7l6 6 4-4 8 8" />
+      <path d="M21 17v-5h-5" />
+    </svg>
+  );
+}
+function IconUsers(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M15 20c0-2.4 1.5-4.5 4-5" />
+    </svg>
+  );
+}
+function IconClock(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+function IconTarget(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.5" />
+    </svg>
+  );
+}
+function IconList(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" strokeWidth="2.2" />
+    </svg>
+  );
+}
+function IconPlay(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M7 5v14l12-7L7 5Z" />
+    </svg>
+  );
+}
+function IconExternal(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M14 4h6v6M20 4l-9 9" />
+      <path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5" />
+    </svg>
+  );
+}
+function IconClose(p: SvgProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth="1.6" className={`${svgBase} ${p.className ?? ""}`}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+const ICONS: Record<IconKey, (p: SvgProps) => React.ReactElement> = {
+  map: IconMap,
+  chart: IconChart,
+  trophy: IconTrophy,
+  trend: IconTrend,
+  users: IconUsers,
+  clock: IconClock,
+  target: IconTarget,
+  list: IconList,
+};
+
+/* ──────────────────────────────────────────────────────────────
+   Component
+   ────────────────────────────────────────────────────────────── */
 
 export default function Home() {
   const [selectedMode, setSelectedMode] = useState<string>("ga");
@@ -118,7 +241,7 @@ export default function Home() {
       console.warn("API fetch failed, falling back to precomputed data.", error);
       const err = error as Error;
       setErrorMsg(
-        `${err.message || "Failed to reach API server."} (ระบบได้โหลดชุดข้อมูลสำรองของ ${selectedMode.toUpperCase()} ให้แทนแล้ว)`
+        `${err.message || "Failed to reach API server."} — ระบบได้โหลดชุดข้อมูลสำรองของ ${selectedMode.toUpperCase()} ให้แทนแล้ว`
       );
       setResults(getPrecomputedResult(selectedMode));
     }
@@ -128,7 +251,7 @@ export default function Home() {
   const launchSumo = async () => {
     setSumoStatus({
       type: "info",
-      msg: `กำลังเปิด SUMO-GUI สำหรับ ${selectedMode.toUpperCase()}...`,
+      msg: `กำลังเปิด SUMO-GUI สำหรับ ${selectedMode.toUpperCase()}…`,
     });
     try {
       const res = await fetch(`http://127.0.0.1:8000/api/launch/${selectedMode}`, {
@@ -138,13 +261,13 @@ export default function Home() {
       if (!res.ok) throw new Error(data.detail || "Unknown error from API");
       setSumoStatus({
         type: "success",
-        msg: `🎉 เปิด SUMO-GUI (${selectedMode.toUpperCase()}) สำเร็จ — กด Play สีเขียวเพื่อเริ่มเดินรถ`,
+        msg: `เปิด SUMO-GUI (${selectedMode.toUpperCase()}) สำเร็จ — กด Play สีเขียวเพื่อเริ่มเดินรถ`,
       });
     } catch (error: unknown) {
       const err = error as Error;
       setSumoStatus({
         type: "error",
-        msg: `❌ เปิด SUMO-GUI ไม่ได้: ${err.message} (ตรวจ XQuartz + api_server.py)`,
+        msg: `เปิด SUMO-GUI ไม่ได้: ${err.message} (ตรวจ XQuartz + api_server.py)`,
       });
     }
   };
@@ -155,7 +278,6 @@ export default function Home() {
     results?.schedule || PRECOMPUTED_SCHEDULES[selectedMode] || [];
   const activeTabItem = TAB_ITEMS.find((t) => t.key === activeTab);
 
-  // Group tabs by category for sidebar sections
   const groupedTabs = TAB_ITEMS.reduce<Record<TabItem["group"], TabItem[]>>(
     (acc, t) => {
       (acc[t.group] ||= []).push(t);
@@ -164,114 +286,52 @@ export default function Home() {
     { overview: [], analysis: [], student: [], detail: [] }
   );
 
+  const isLive = results?.data_source === "live";
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 flex font-sans">
-      {/* ─── LEFT SIDEBAR ────────────────────────────────────────────── */}
-      <aside className="w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
-        {/* Logo / Brand */}
-        <div className="px-5 py-4 border-b border-slate-200">
-          <div className="flex items-center space-x-2.5">
-            <span className="text-2xl">🚌</span>
-            <div>
-              <h1 className="text-base font-extrabold text-blue-800 leading-tight">
-                UniFlow EV
-              </h1>
-              <p className="text-[10px] text-slate-500 leading-tight">
-                TU Rangsit Shuttle Optimizer
-              </p>
+    <main className="min-h-screen flex bg-neutral-50 text-neutral-900">
+      {/* ─── SIDEBAR ─────────────────────────────────────────────── */}
+      <aside className="w-64 shrink-0 bg-white border-r border-neutral-200 flex flex-col h-screen sticky top-0">
+        {/* Brand */}
+        <div className="px-5 h-16 flex items-center border-b border-neutral-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-sm tracking-tight">
+              UF
+            </div>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-neutral-900">UniFlow EV</div>
+              <div className="text-[11px] text-neutral-500">TU Rangsit Shuttle</div>
             </div>
           </div>
-          <div className="mt-2.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
-            Simulation Ready
-          </div>
         </div>
 
-        {/* Algorithm picker + Run controls */}
-        <div className="px-5 py-4 border-b border-slate-200 space-y-3">
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Algorithm
-          </label>
-          <select
-            value={selectedMode}
-            onChange={(e) => handleModeChange(e.target.value)}
-            className="w-full p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium text-slate-800"
-          >
-            {ALGO_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <div className="grid grid-cols-4 gap-1">
-            {(["ga", "sa", "pso", "aco"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => handleModeChange(m)}
-                className={`py-1.5 rounded-md text-[10px] font-bold uppercase transition ${
-                  selectedMode === m
-                    ? "bg-blue-700 text-white shadow-sm ring-1 ring-blue-300"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={runSimulation}
-            disabled={loading}
-            className="w-full px-3 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition shadow-sm flex items-center justify-center space-x-1.5"
-          >
-            <span>{loading ? "⏳" : "🚀"}</span>
-            <span>{loading ? "กำลังจำลอง..." : "Run Live Simulation"}</span>
-          </button>
-          <button
-            onClick={launchSumo}
-            disabled={loading || !results}
-            className="w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition shadow-sm flex items-center justify-center space-x-1.5"
-          >
-            <span>🗺️</span>
-            <span>Open SUMO-GUI</span>
-          </button>
-        </div>
-
-        {/* Vertical nav — grouped by category */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-5 space-y-6">
           {(Object.keys(groupedTabs) as TabItem["group"][]).map((group) => (
             <div key={group}>
-              <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="px-3 pb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400">
                 {GROUP_LABELS[group]}
               </div>
               <div className="space-y-0.5">
                 {groupedTabs[group].map((t) => {
+                  const Icon = ICONS[t.icon];
                   const active = activeTab === t.key;
                   return (
                     <button
                       key={t.key}
                       onClick={() => setActiveTab(t.key)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition ${
+                      className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                         active
-                          ? "bg-blue-50 border border-blue-200 shadow-sm"
-                          : "border border-transparent hover:bg-slate-50"
+                          ? "bg-neutral-900 text-white"
+                          : "text-neutral-700 hover:bg-neutral-100"
                       }`}
                     >
-                      <span className="text-lg leading-none">{t.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className={`text-xs font-bold truncate ${
-                            active ? "text-blue-700" : "text-slate-700"
-                          }`}
-                        >
-                          {t.labelEn}
-                        </div>
-                        <div className="text-[10px] text-slate-500 truncate">
-                          {t.labelTh}
-                        </div>
-                      </div>
-                      {active && (
-                        <span className="w-1 h-6 rounded-full bg-blue-600" />
-                      )}
+                      <Icon
+                        className={`w-[18px] h-[18px] ${
+                          active ? "text-white" : "text-neutral-400 group-hover:text-neutral-700"
+                        }`}
+                      />
+                      <span className="text-[13px] font-medium truncate">{t.label}</span>
                     </button>
                   );
                 })}
@@ -281,281 +341,253 @@ export default function Home() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-200 text-[10px] text-slate-400">
-          UniFlow EV &bull; Senior Project 2026
+        <div className="px-3 py-3 border-t border-neutral-200 space-y-2">
+          <Link
+            href="/u"
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-[12px] font-medium text-neutral-700 hover:bg-neutral-100 transition"
+          >
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              เปิดโหมดผู้ใช้
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              strokeWidth="1.7"
+              className="w-3.5 h-3.5 shrink-0 stroke-current fill-none [stroke-linecap:round] [stroke-linejoin:round] text-neutral-400"
+            >
+              <path d="M7 17L17 7M9 7h8v8" />
+            </svg>
+          </Link>
+          <div className="px-3 text-[11px] text-neutral-400">
+            Senior Project · 2026
+          </div>
         </div>
       </aside>
 
-      {/* ─── RIGHT MAIN CONTENT ─────────────────────────────────────── */}
-      <section className="flex-1 min-w-0 overflow-x-hidden">
-        {/* Top strip: breadcrumb + data source badges */}
-        <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-6 md:px-8 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">Dashboard</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-lg">{activeTabItem?.icon}</span>
-            <span className="font-bold text-slate-800">{activeTabItem?.labelEn}</span>
-            <span className="hidden md:inline text-xs text-slate-500">
-              ({activeTabItem?.labelTh})
-            </span>
-          </div>
-
-          {results && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 ml-auto text-xs">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide text-[10px] ${
-                  results.data_source === "live"
-                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                    : "bg-slate-200 text-slate-700 border border-slate-300"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    results.data_source === "live" ? "bg-emerald-500" : "bg-slate-500"
-                  }`}
-                />
-                {results.data_source === "live" ? "LIVE RUN" : "DEMO DATA"}
-              </span>
-              {typeof results.elapsed_sec === "number" && results.elapsed_sec > 0 && (
-                <span className="text-slate-600">
-                  ⏱️ <b>{results.elapsed_sec.toFixed(2)}s</b>
-                </span>
-              )}
-              {typeof results.on_time_rate_pct === "number" && (
-                <span className="text-slate-600">
-                  🎯 On-time <b>{results.on_time_rate_pct.toFixed(1)}%</b>
-                </span>
-              )}
-              {typeof results.fleet_utilization_pct === "number" && (
-                <span className="text-slate-600">
-                  🚌 Util <b>{results.fleet_utilization_pct.toFixed(1)}%</b>
-                </span>
-              )}
-              {typeof results.total_buses === "number" && (
-                <span className="text-slate-600">
-                  🚐 <b>{results.total_buses}</b> คัน
-                </span>
-              )}
-              {results.history && results.history.length > 0 && (
-                <span className="text-slate-600">
-                  📉 <b>{results.history.length}</b> iters
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 md:p-8 space-y-6 max-w-6xl">
-          {/* SUMO status banner */}
-          {sumoStatus && (
-            <div
-              className={`p-3.5 rounded-xl border text-sm flex items-start justify-between gap-3 transition ${
-                sumoStatus.type === "success"
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-950"
-                  : sumoStatus.type === "error"
-                  ? "bg-red-50 border-red-300 text-red-900"
-                  : "bg-blue-50 border-blue-300 text-blue-900"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">
-                  {sumoStatus.type === "success"
-                    ? "🖥️"
-                    : sumoStatus.type === "error"
-                    ? "⚠️"
-                    : "⏳"}
-                </span>
-                <span>{sumoStatus.msg}</span>
+      {/* ─── MAIN CONTENT ────────────────────────────────────────── */}
+      <section className="flex-1 min-w-0">
+        {/* Top bar */}
+        <header className="sticky top-0 z-10 bg-white/85 backdrop-blur-md border-b border-neutral-200">
+          <div className="px-8 h-16 flex items-center gap-4">
+            {/* Title */}
+            <div className="min-w-0">
+              <div className="text-[11px] text-neutral-500 leading-none mb-1">
+                Dashboard
               </div>
-              <button
-                onClick={() => setSumoStatus(null)}
-                className="text-xs font-bold opacity-60 hover:opacity-100 px-2"
+              <h1 className="text-[15px] font-semibold text-neutral-900 leading-none truncate">
+                {activeTabItem?.label}
+              </h1>
+            </div>
+
+            {/* Right controls */}
+            <div className="ml-auto flex items-center gap-2">
+              <select
+                value={selectedMode}
+                onChange={(e) => handleModeChange(e.target.value)}
+                className="h-9 pl-3 pr-8 text-[13px] bg-white border border-neutral-200 rounded-lg text-neutral-800 font-medium hover:border-neutral-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
               >
-                ✕
+                {ALGO_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label} — {o.full}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={launchSumo}
+                disabled={loading || !results}
+                className="h-9 px-3 inline-flex items-center gap-1.5 border border-neutral-200 rounded-lg text-[13px] font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <IconExternal className="w-4 h-4" />
+                SUMO-GUI
+              </button>
+
+              <button
+                onClick={runSimulation}
+                disabled={loading}
+                className="h-9 px-4 inline-flex items-center gap-1.5 bg-neutral-900 text-white rounded-lg text-[13px] font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+              >
+                <IconPlay className="w-4 h-4" />
+                {loading ? "กำลังจำลอง…" : "Run"}
               </button>
             </div>
-          )}
+          </div>
 
-          {/* Error banner */}
-          {errorMsg && (
-            <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-amber-900 text-sm flex items-start gap-2.5">
-              <span className="text-lg">ℹ️</span>
-              <div>
-                <span className="font-bold">สถานะการเชื่อมต่อ: </span>
-                {errorMsg}
-              </div>
+          {/* Metrics strip */}
+          {results && (
+            <div className="px-8 h-11 flex items-center gap-6 border-t border-neutral-100 text-[12px]">
+              <span className="inline-flex items-center gap-1.5 font-medium text-neutral-700">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isLive ? "bg-emerald-500" : "bg-neutral-400"
+                  }`}
+                />
+                {isLive ? "Live run" : "Demo data"}
+              </span>
+
+              {typeof results.on_time_rate_pct === "number" && (
+                <Metric label="On-time" value={`${results.on_time_rate_pct.toFixed(1)}%`} />
+              )}
+              {typeof results.fleet_utilization_pct === "number" && (
+                <Metric label="Fleet util" value={`${results.fleet_utilization_pct.toFixed(1)}%`} />
+              )}
+              {typeof results.total_buses === "number" && (
+                <Metric label="Buses" value={`${results.total_buses}`} />
+              )}
+              {typeof results.elapsed_sec === "number" && results.elapsed_sec > 0 && (
+                <Metric label="Elapsed" value={`${results.elapsed_sec.toFixed(2)}s`} />
+              )}
+              {results.history && results.history.length > 0 && (
+                <Metric label="Iterations" value={`${results.history.length}`} />
+              )}
             </div>
           )}
+        </header>
 
-          {/* ─── ACTIVE PANEL ─── */}
+        {/* Body */}
+        <div className="p-8 space-y-5 max-w-6xl">
+          {/* Status banners */}
+          {sumoStatus && (
+            <Banner
+              variant={sumoStatus.type}
+              message={sumoStatus.msg}
+              onClose={() => setSumoStatus(null)}
+            />
+          )}
+          {errorMsg && (
+            <Banner variant="warning" message={errorMsg} title="สถานะการเชื่อมต่อ" />
+          )}
+
+          {/* Active panel */}
           {activeTab === "network" && (
-            <section className="space-y-6">
+            <>
               <CampusTransitMap
                 baselineSchedule={activeBaselineSchedule}
                 optimizedSchedule={activeOptimizedSchedule}
                 selectedMode={selectedMode}
               />
               {results && (
-                <MetricsComparisonCharts
-                  results={results}
-                  selectedMode={selectedMode}
-                />
+                <MetricsComparisonCharts results={results} selectedMode={selectedMode} />
               )}
-            </section>
+            </>
           )}
 
           {activeTab === "metrics" && results && (
-            <section className="space-y-6">
-              <MetricsComparisonCharts
-                results={results}
-                selectedMode={selectedMode}
-              />
+            <>
+              <MetricsComparisonCharts results={results} selectedMode={selectedMode} />
               <RouteFleetCharts
                 baselineSchedule={activeBaselineSchedule}
                 optimizedSchedule={activeOptimizedSchedule}
                 selectedMode={selectedMode}
               />
-            </section>
+            </>
           )}
 
           {activeTab === "benchmark" && (
-            <section className="space-y-6">
+            <>
               <BenchmarkComparisonChart currentAlgorithm={selectedMode} />
               {results && (
-                <MetricsComparisonCharts
-                  results={results}
-                  selectedMode={selectedMode}
-                />
+                <MetricsComparisonCharts results={results} selectedMode={selectedMode} />
               )}
-            </section>
+            </>
           )}
 
           {activeTab === "fleet" && (
-            <section className="space-y-6">
-              <RouteFleetCharts
-                baselineSchedule={activeBaselineSchedule}
-                optimizedSchedule={activeOptimizedSchedule}
-                selectedMode={selectedMode}
-              />
-            </section>
+            <RouteFleetCharts
+              baselineSchedule={activeBaselineSchedule}
+              optimizedSchedule={activeOptimizedSchedule}
+              selectedMode={selectedMode}
+            />
           )}
 
           {activeTab === "convergence" && (
-            <section className="space-y-6">
-              <ConvergenceChart
-                history={results?.history ?? []}
-                algorithm={results?.algorithm || selectedMode}
-                elapsedSec={results?.elapsed_sec}
-              />
-            </section>
+            <ConvergenceChart
+              history={results?.history ?? []}
+              algorithm={results?.algorithm || selectedMode}
+              elapsedSec={results?.elapsed_sec}
+            />
           )}
 
-          {activeTab === "planner" && (
-            <section className="space-y-6">
-              <TripPlanner selectedAlgorithm={selectedMode} />
-            </section>
-          )}
+          {activeTab === "planner" && <TripPlanner selectedAlgorithm={selectedMode} />}
 
           {activeTab === "mobility" && (
-            <section className="space-y-6">
-              <MobilityPanel
-                busStats={results?.bus_stats ?? []}
-                onTimeRatePct={results?.on_time_rate_pct}
-                latePassengers={results?.late_passengers}
-                strandedPassengers={results?.stranded_passengers}
-                totalPassengers={results?.total_passengers}
-                totalBuses={results?.total_buses}
-                fleetUtilPct={results?.fleet_utilization_pct}
-                odMatrix={results?.od_matrix ?? []}
-                timeseries={results?.mobility_timeseries ?? []}
-              />
-            </section>
+            <MobilityPanel
+              busStats={results?.bus_stats ?? []}
+              onTimeRatePct={results?.on_time_rate_pct}
+              latePassengers={results?.late_passengers}
+              strandedPassengers={results?.stranded_passengers}
+              totalPassengers={results?.total_passengers}
+              totalBuses={results?.total_buses}
+              fleetUtilPct={results?.fleet_utilization_pct}
+              odMatrix={results?.od_matrix ?? []}
+              timeseries={results?.mobility_timeseries ?? []}
+            />
           )}
 
           {activeTab === "schedule" && activeOptimizedSchedule.length > 0 && (
-            <section className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-              <div className="flex items-center justify-between border-b pb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">
-                    📋 Optimized Route Schedule &amp; Timetable ({selectedMode.toUpperCase()})
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1">
-                    ตารางเวลาเทียบท่าและลำดับป้ายจอดตามมาตรฐานสถานีขนส่ง
-                  </p>
-                </div>
-                <span className="text-xs bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full">
-                  {activeOptimizedSchedule.length} สาย
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse rounded-xl overflow-hidden shadow-sm">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider">
-                      <th className="p-3.5 border-b">Route</th>
-                      <th className="p-3.5 border-b">Path &amp; Arrival Timetable</th>
-                      <th className="p-3.5 border-b text-center">Buses</th>
-                      <th className="p-3.5 border-b text-center">Headway</th>
-                      <th className="p-3.5 border-b text-center">Operating Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-100">
-                    {activeOptimizedSchedule.map((route: RouteSchedule, index: number) => (
-                      <tr key={index} className="hover:bg-slate-50 transition">
-                        <td className="p-3.5 font-bold text-slate-800 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            Route {index + 1}
-                          </span>
-                        </td>
-                        <td className="p-3.5">
-                          <div className="flex flex-wrap gap-1.5 items-center">
-                            {route.path.map((stop: string, i: number) => (
-                              <span key={i} className="flex items-center">
-                                <span className="bg-slate-100 hover:bg-blue-50 text-slate-800 text-xs px-2.5 py-1.5 rounded-lg shadow-xs border border-slate-200 flex flex-col items-center transition">
-                                  <span className="font-medium">{stop}</span>
-                                  {route.timetable && route.timetable[i] && (
-                                    <span className="text-[10px] font-bold mt-0.5 text-blue-600 border-t border-slate-200 pt-0.5 w-full text-center">
-                                      {formatTime(route.timetable[i].arrival_time)}
-                                    </span>
-                                  )}
-                                </span>
-                                {i < route.path.length - 1 && (
-                                  <span className="text-slate-400 mx-1 text-xs">➔</span>
-                                )}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-2 flex items-center space-x-1.5">
-                            <span>⏱️ คันแรกถึงป้ายตามเวลาด้านบน และคันถัดไปจะมาถึงทุก ๆ</span>
-                            <span className="font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded">
-                              {route.headway.toFixed(1)} นาที
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3.5 text-center font-bold text-slate-700">
-                          {route.num_bus} คัน
-                        </td>
-                        <td className="p-3.5 text-center text-slate-700 font-semibold">
-                          {route.headway.toFixed(1)} นาที
-                        </td>
-                        <td className="p-3.5 text-center text-slate-700">
-                          <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs whitespace-nowrap border font-mono">
-                            {formatTime(route.startTime)} - {formatTime(route.endTime)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="text-slate-500 text-xs text-center pt-2">
-                * กด &quot;Open SUMO-GUI&quot; ที่ sidebar เพื่อดูการจำลองการวิ่งจริงของรถเมล์
-              </p>
-            </section>
+            <ScheduleTable
+              schedule={activeOptimizedSchedule}
+              mode={selectedMode}
+            />
           )}
         </div>
       </section>
     </main>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Subcomponents
+   ────────────────────────────────────────────────────────────── */
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5 text-neutral-600">
+      <span className="text-neutral-500">{label}</span>
+      <span className="font-semibold text-neutral-900 tabular-nums">{value}</span>
+    </span>
+  );
+}
+
+function Banner({
+  variant,
+  message,
+  title,
+  onClose,
+}: {
+  variant: "success" | "error" | "info" | "warning";
+  message: string;
+  title?: string;
+  onClose?: () => void;
+}) {
+  const dotColor =
+    variant === "success"
+      ? "bg-emerald-500"
+      : variant === "error"
+      ? "bg-red-500"
+      : variant === "warning"
+      ? "bg-amber-500"
+      : "bg-indigo-500";
+
+  return (
+    <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-white border border-neutral-200 text-[13px] text-neutral-800">
+      <span className="mt-1.5 inline-flex items-center gap-2 shrink-0">
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      </span>
+      <div className="flex-1 min-w-0">
+        {title && <div className="font-semibold text-neutral-900 mb-0.5">{title}</div>}
+        <div className="text-neutral-600">{message}</div>
+      </div>
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition"
+          aria-label="Close"
+        >
+          <IconClose className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+

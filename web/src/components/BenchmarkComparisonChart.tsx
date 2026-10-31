@@ -5,7 +5,7 @@ import { BenchmarkAlgorithmData } from "@/types/shuttle";
 
 export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
   baseline: {
-    algorithm: "BASELINE",
+    algorithm: "Baseline",
     wait_time: 2.37,
     travel_time: 11.38,
     total_time: 13.75,
@@ -16,7 +16,7 @@ export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
     avg_headway: 3.77,
   },
   ga: {
-    algorithm: "GA (Genetic)",
+    algorithm: "GA",
     wait_time: 1.59,
     travel_time: 10.34,
     total_time: 11.93,
@@ -27,7 +27,7 @@ export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
     avg_headway: 3.4,
   },
   sa: {
-    algorithm: "SA (Annealing)",
+    algorithm: "SA",
     wait_time: 0.34,
     travel_time: 2.93,
     total_time: 3.27,
@@ -38,7 +38,7 @@ export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
     avg_headway: 1.01,
   },
   pso: {
-    algorithm: "PSO (Particle)",
+    algorithm: "PSO",
     wait_time: 1.36,
     travel_time: 11.55,
     total_time: 12.91,
@@ -49,7 +49,7 @@ export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
     avg_headway: 3.07,
   },
   aco: {
-    algorithm: "ACO (Ant Colony)",
+    algorithm: "ACO",
     wait_time: 1.31,
     travel_time: 9.35,
     total_time: 10.66,
@@ -61,15 +61,48 @@ export const DEFAULT_BENCHMARK_DATA: Record<string, BenchmarkAlgorithmData> = {
   },
 };
 
-const ALGO_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
-  baseline: { bar: "bg-slate-400", text: "text-slate-700", bg: "bg-slate-100", border: "border-slate-300" },
-  ga: { bar: "bg-blue-600", text: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
-  sa: { bar: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" },
-  pso: { bar: "bg-indigo-600", text: "text-indigo-700", bg: "bg-indigo-50", border: "border-indigo-200" },
-  aco: { bar: "bg-emerald-600", text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
+type MetricKey = "wait_time" | "travel_time" | "total_time" | "avg_headway";
+
+const ALL_ALGOS = ["baseline", "ga", "sa", "pso", "aco"] as const;
+
+const METRIC_CONFIG: Record<
+  MetricKey,
+  { title: string; sub: string; unit: string; max: number }
+> = {
+  wait_time: {
+    title: "เวลารอรถเฉลี่ย",
+    sub: "ยิ่งน้อยยิ่งดี — ผู้โดยสารรอรถที่ป้ายสั้นลง",
+    unit: "นาที",
+    max: 3.0,
+  },
+  travel_time: {
+    title: "เวลาเดินทางบนรถเฉลี่ย",
+    sub: "เวลาที่ผู้โดยสารนั่งอยู่บนรถจนถึงจุดหมาย",
+    unit: "นาที",
+    max: 14.0,
+  },
+  total_time: {
+    title: "เวลารวมทั้งสิ้น",
+    sub: "ผลรวมเวลารอ + เวลาเดินทางของผู้โดยสาร",
+    unit: "นาที",
+    max: 16.0,
+  },
+  avg_headway: {
+    title: "ความถี่การปล่อยรถเฉลี่ย",
+    sub: "ช่วงเวลาระหว่างรถคันก่อนและคันถัดไป",
+    unit: "นาที/คัน",
+    max: 5.0,
+  },
 };
 
-interface BenchmarkComparisonChartProps {
+const METRIC_TABS: Array<{ key: MetricKey; label: string }> = [
+  { key: "wait_time", label: "เวลารอ" },
+  { key: "travel_time", label: "เวลาเดินทาง" },
+  { key: "total_time", label: "เวลารวม" },
+  { key: "avg_headway", label: "ความถี่" },
+];
+
+interface Props {
   currentAlgorithm?: string;
   customData?: Record<string, BenchmarkAlgorithmData>;
 }
@@ -77,239 +110,189 @@ interface BenchmarkComparisonChartProps {
 export default function BenchmarkComparisonChart({
   currentAlgorithm = "baseline",
   customData,
-}: BenchmarkComparisonChartProps) {
-  const [selectedMetric, setSelectedMetric] = useState<"wait_time" | "travel_time" | "total_time" | "avg_headway">(
-    "wait_time"
-  );
+}: Props) {
+  const [metric, setMetric] = useState<MetricKey>("wait_time");
 
-  const benchmarkData = customData || DEFAULT_BENCHMARK_DATA;
-  const algos = ["baseline", "ga", "sa", "pso", "aco"];
+  const data = customData || DEFAULT_BENCHMARK_DATA;
+  const cfg = METRIC_CONFIG[metric];
+  const baselineVal = data.baseline?.[metric] ?? 1;
 
-  const metricConfig = {
-    wait_time: {
-      title: "เวลารอรถเฉลี่ย (Average Wait Time)",
-      unit: "นาที",
-      desc: "ยิ่งน้อยยิ่งดี — แสดงความรวดเร็วที่ผู้โดยสารรอรถที่ป้าย",
-      max: 3.0,
-      baselineVal: benchmarkData.baseline?.wait_time ?? 2.37,
-    },
-    travel_time: {
-      title: "เวลาเดินทางบนรถเฉลี่ย (Average Travel Time)",
-      unit: "นาที",
-      desc: "เวลาที่ผู้โดยสารนั่งอยู่บนรถจนถึงจุดหมาย",
-      max: 14.0,
-      baselineVal: benchmarkData.baseline?.travel_time ?? 11.38,
-    },
-    total_time: {
-      title: "เวลารวมทั้งสิ้น (Total Journey Time)",
-      unit: "นาที",
-      desc: "ผลรวมเวลารอ + เวลาเดินทางของผู้โดยสารในระบบ",
-      max: 16.0,
-      baselineVal: benchmarkData.baseline?.total_time ?? 13.75,
-    },
-    avg_headway: {
-      title: "ความถี่การปล่อยรถเฉลี่ย (Average Headway)",
-      unit: "นาที/คัน",
-      desc: "ช่วงเวลาระหว่างรถคันก่อนหน้าและคันถัดไป",
-      max: 5.0,
-      baselineVal: benchmarkData.baseline?.avg_headway ?? 3.77,
-    },
-  };
-
-  const currentConfig = metricConfig[selectedMetric];
-
-  // Sort algorithms by current metric ascending (lower is better)
-  const rankedAlgos = [...algos].sort((a, b) => {
-    const valA = benchmarkData[a]?.[selectedMetric] ?? 999;
-    const valB = benchmarkData[b]?.[selectedMetric] ?? 999;
-    return valA - valB;
+  const ranked = [...ALL_ALGOS].sort((a, b) => {
+    const av = (data[a]?.[metric] as number) ?? 999;
+    const bv = (data[b]?.[metric] as number) ?? 999;
+    return av - bv;
   });
 
+  const bestKey = ranked[0];
+  const current = currentAlgorithm.toLowerCase();
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 space-y-6">
+    <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+      <div className="px-6 py-5 border-b border-neutral-100 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-            <span>🏆 All-Algorithms Benchmark (เปรียบเทียบภาพรวมทุกอัลกอริทึม)</span>
+          <h3 className="text-[15px] font-semibold text-neutral-900">
+            เปรียบเทียบทุกอัลกอริทึม
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            เปรียบเทียบประสิทธิภาพการเพิ่มประสิทธิภาพเส้นทางระหว่าง Metaheuristics ทั้ง 4 แบบ กับระบบ Baseline
+          <p className="text-[12px] text-neutral-500 mt-0.5">
+            ประสิทธิภาพของ GA / SA / PSO / ACO เทียบกับ Baseline
           </p>
         </div>
 
-        {/* Metric Selector Tabs */}
-        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100 self-start md:self-auto overflow-x-auto">
-          <button
-            onClick={() => setSelectedMetric("wait_time")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition ${
-              selectedMetric === "wait_time"
-                ? "bg-white text-blue-700 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            ⏳ เวลารอ (Wait)
-          </button>
-          <button
-            onClick={() => setSelectedMetric("travel_time")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition ${
-              selectedMetric === "travel_time"
-                ? "bg-white text-blue-700 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            ⏱️ เวลาเดินทาง (Travel)
-          </button>
-          <button
-            onClick={() => setSelectedMetric("total_time")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition ${
-              selectedMetric === "total_time"
-                ? "bg-white text-blue-700 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            🚶 เวลารวม (Total)
-          </button>
-          <button
-            onClick={() => setSelectedMetric("avg_headway")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition ${
-              selectedMetric === "avg_headway"
-                ? "bg-white text-blue-700 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            🚌 ความถี่ (Headway)
-          </button>
+        {/* Metric tabs */}
+        <div className="inline-flex p-0.5 bg-neutral-100 rounded-lg">
+          {METRIC_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setMetric(t.key)}
+              className={`px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap transition ${
+                metric === t.key
+                  ? "bg-white text-neutral-900 shadow-sm"
+                  : "text-neutral-600 hover:text-neutral-900"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Bar Chart Comparison */}
-      <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-slate-800 text-sm">
-            {currentConfig.title}
-          </span>
-          <span className="text-xs text-slate-500">{currentConfig.desc}</span>
+      {/* Metric body */}
+      <div className="px-6 py-5">
+        <div className="flex items-baseline justify-between mb-4">
+          <div>
+            <div className="text-[13px] font-medium text-neutral-900">
+              {cfg.title}
+            </div>
+            <div className="text-[11px] text-neutral-500">{cfg.sub}</div>
+          </div>
+          <div className="text-[11px] text-neutral-500">
+            หน่วย: <span className="font-medium text-neutral-700">{cfg.unit}</span>
+          </div>
         </div>
 
-        {/* Horizontal Bar Visual Graph */}
-        <div className="space-y-3 pt-2">
-          {algos.map((algoKey) => {
-            const data = benchmarkData[algoKey];
-            if (!data) return null;
+        {/* Ranked rows (sorted best → worst) */}
+        <div className="space-y-2.5">
+          {ranked.map((key, idx) => {
+            const row = data[key];
+            if (!row) return null;
+            const value = row[metric] as number;
+            const pct = Math.min(100, (value / cfg.max) * 100);
+            const isActive = current === key;
+            const isBest = key === bestKey;
+            const isBaseline = key === "baseline";
+            const diff = value - baselineVal;
+            const diffPct = baselineVal > 0 ? (diff / baselineVal) * 100 : 0;
 
-            const value = data[selectedMetric] as number;
-            const percentage = Math.min(100, (value / currentConfig.max) * 100);
-            const isSelected = currentAlgorithm.toLowerCase() === algoKey;
-            const diffWithBaseline = value - currentConfig.baselineVal;
-            const pctWithBaseline =
-              currentConfig.baselineVal > 0
-                ? (diffWithBaseline / currentConfig.baselineVal) * 100
-                : 0;
-            const colors = ALGO_COLORS[algoKey] || ALGO_COLORS.baseline;
+            // Bar color: best → emerald, active → indigo, baseline → neutral-300, others → neutral-400
+            const barClass = isBest
+              ? "bg-emerald-500"
+              : isActive
+              ? "bg-indigo-500"
+              : isBaseline
+              ? "bg-neutral-300"
+              : "bg-neutral-400";
 
             return (
               <div
-                key={algoKey}
-                className={`p-3 rounded-lg border transition-all ${
-                  isSelected
-                    ? "bg-white border-blue-400 shadow-md ring-2 ring-blue-100"
-                    : "bg-white/70 border-slate-200 hover:bg-white"
+                key={key}
+                className={`flex items-center gap-3 rounded-lg py-1.5 pl-2 pr-3 -mx-2 transition ${
+                  isActive ? "bg-indigo-50/60" : ""
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded ${colors.bg} ${colors.text} border ${colors.border}`}
-                    >
-                      {data.algorithm}
+                {/* Rank */}
+                <div className="w-6 shrink-0 text-center">
+                  <span
+                    className={`inline-block text-[11px] font-semibold tabular-nums ${
+                      isBest ? "text-emerald-600" : "text-neutral-400"
+                    }`}
+                  >
+                    #{idx + 1}
+                  </span>
+                </div>
+
+                {/* Algorithm name */}
+                <div className="w-28 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-medium text-neutral-900">
+                      {row.algorithm}
                     </span>
-                    {isSelected && (
-                      <span className="text-[10px] bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded">
-                        Active Selection
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs">
-                    <span className="font-extrabold text-slate-900 text-sm">
-                      {value.toFixed(2)} {currentConfig.unit}
-                    </span>
-                    {algoKey !== "baseline" && (
-                      <span
-                        className={`font-semibold text-[11px] px-1.5 py-0.2 rounded ${
-                          diffWithBaseline <= 0
-                            ? "text-emerald-700 bg-emerald-50"
-                            : "text-red-600 bg-red-50"
-                        }`}
-                      >
-                        {diffWithBaseline <= 0 ? "ลดลง " : "+"}
-                        {Math.abs(pctWithBaseline).toFixed(1)}%
+                    {isActive && (
+                      <span className="text-[9px] font-semibold text-indigo-600 uppercase tracking-wide">
+                        active
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Visual Bar Track */}
-                <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+                {/* Bar */}
+                <div className="flex-1 h-2.5 bg-neutral-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-4 rounded-full transition-all duration-700 ${colors.bar} shadow-inner`}
-                    style={{ width: `${percentage}%` }}
+                    className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+                    style={{ width: `${pct}%` }}
                   />
+                </div>
+
+                {/* Value */}
+                <div className="w-16 text-right text-[13px] font-semibold text-neutral-900 tabular-nums shrink-0">
+                  {value.toFixed(2)}
+                </div>
+
+                {/* vs baseline chip */}
+                <div className="w-20 text-right shrink-0">
+                  {isBaseline ? (
+                    <span className="text-[11px] text-neutral-400">—</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          diff <= 0 ? "bg-emerald-500" : "bg-red-500"
+                        }`}
+                      />
+                      <span
+                        className={
+                          diff <= 0 ? "text-emerald-700" : "text-red-700"
+                        }
+                      >
+                        {diff <= 0 ? "−" : "+"}
+                        {Math.abs(diffPct).toFixed(1)}%
+                      </span>
+                    </span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Leaderboard & Summary Ranking Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* 1st Place */}
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-xl border border-amber-200">
-          <div className="flex items-center space-x-2 text-amber-800 font-bold text-sm">
-            <span>🥇 อันดับที่ 1 (ดีที่สุดในหัวข้อนี้)</span>
-          </div>
-          <div className="mt-2 text-lg font-extrabold text-amber-950">
-            {benchmarkData[rankedgos(0)]?.algorithm}
-          </div>
-          <div className="text-xs text-amber-700 mt-1">
-            {benchmarkData[rankedgos(0)]?.[selectedMetric]?.toFixed(2)}{" "}
-            {currentConfig.unit} (เร็วขึ้นอย่างโดดเด่น)
-          </div>
-        </div>
-
-        {/* 2nd Place */}
-        <div className="bg-gradient-to-br from-slate-50 to-gray-100 p-4 rounded-xl border border-slate-200">
-          <div className="flex items-center space-x-2 text-slate-700 font-bold text-sm">
-            <span>🥈 อันดับที่ 2</span>
-          </div>
-          <div className="mt-2 text-lg font-extrabold text-slate-900">
-            {benchmarkData[rankedgos(1)]?.algorithm}
-          </div>
-          <div className="text-xs text-slate-600 mt-1">
-            {benchmarkData[rankedgos(1)]?.[selectedMetric]?.toFixed(2)}{" "}
-            {currentConfig.unit}
-          </div>
-        </div>
-
-        {/* 3rd Place */}
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50/50 p-4 rounded-xl border border-orange-200">
-          <div className="flex items-center space-x-2 text-orange-800 font-bold text-sm">
-            <span>🥉 อันดับที่ 3</span>
-          </div>
-          <div className="mt-2 text-lg font-extrabold text-orange-950">
-            {benchmarkData[rankedgos(2)]?.algorithm}
-          </div>
-          <div className="text-xs text-orange-700 mt-1">
-            {benchmarkData[rankedgos(2)]?.[selectedMetric]?.toFixed(2)}{" "}
-            {currentConfig.unit}
+        {/* Winner callout */}
+        <div className="mt-5 flex items-start gap-2.5 px-4 py-3 bg-emerald-50/60 border border-emerald-100 rounded-xl">
+          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+          <div className="text-[13px] text-neutral-700">
+            <span className="font-semibold text-neutral-900">
+              {data[bestKey]?.algorithm}
+            </span>{" "}
+            ทำได้ดีที่สุดในหัวข้อนี้ที่{" "}
+            <span className="font-semibold text-neutral-900 tabular-nums">
+              {(data[bestKey]?.[metric] as number).toFixed(2)} {cfg.unit}
+            </span>
+            {bestKey !== "baseline" && (
+              <>
+                {" — ดีกว่า Baseline "}
+                <span className="font-semibold text-emerald-700 tabular-nums">
+                  {(
+                    ((baselineVal -
+                      (data[bestKey]?.[metric] as number)) /
+                      Math.max(baselineVal, 0.001)) *
+                    100
+                  ).toFixed(1)}
+                  %
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
-
-  function rankedgos(index: number) {
-    return rankedAlgos[index] || "baseline";
-  }
 }

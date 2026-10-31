@@ -14,6 +14,7 @@ export default function RouteFleetCharts({
   optimizedSchedule = [],
   selectedMode,
 }: RouteFleetChartsProps) {
+  const mode = selectedMode.toUpperCase();
   const maxRoutes = Math.max(baselineSchedule.length, optimizedSchedule.length, 1);
   const maxHeadway = Math.max(
     ...baselineSchedule.map((r) => r.headway || 0),
@@ -21,163 +22,165 @@ export default function RouteFleetCharts({
     6
   );
 
+  const totalBuses = optimizedSchedule.reduce((s, r) => s + (r.num_bus || 0), 0);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 space-y-6">
+    <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
       {/* Header */}
-      <div className="border-b pb-4">
-        <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-          <span>⏱️ Route Headway & Bus Fleet Allocation (กราฟความถี่และการกระจายรถ)</span>
+      <div className="px-6 py-5 border-b border-neutral-100">
+        <h3 className="text-[15px] font-semibold text-neutral-900">
+          ความถี่และการจัดสรรรถของ {mode}
         </h3>
-        <p className="text-sm text-gray-500 mt-1">
-          เปรียบเทียบระยะเวลาห่างระหว่างเที่ยวรถ (Headway) และการจัดสรรจำนวนรถบัสรายสาย
+        <p className="text-[12px] text-neutral-500 mt-0.5">
+          ระยะห่างระหว่างเที่ยวรถ (headway) และจำนวนรถประจำแต่ละสาย
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Headway Comparison Bar Chart */}
-        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-800">
-              ความถี่การปล่อยรถรายสาย (Headway เปรียบเทียบ)
-            </h4>
-            <span className="text-xs text-slate-500">(หน่วย: นาที)</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-100">
+        {/* ─── Headway comparison ──────────────────────────── */}
+        <div className="px-6 py-5 space-y-5">
+          <div className="flex items-baseline justify-between">
+            <div className="text-[13px] font-medium text-neutral-900">
+              ความถี่ปล่อยรถรายสาย
+            </div>
+            <div className="text-[11px] text-neutral-500">หน่วย: นาที</div>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs text-slate-600 pb-2 border-b border-slate-200">
-            <div className="flex items-center space-x-1.5">
-              <span className="w-3 h-3 bg-blue-400 rounded-sm" />
-              <span>Baseline</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="w-3 h-3 bg-purple-600 rounded-sm" />
-              <span>{selectedMode.toUpperCase()} (Optimized)</span>
-            </div>
+          {/* Legend */}
+          <div className="flex items-center gap-5 text-[11px] text-neutral-500">
+            <LegendDot swatch="bg-neutral-300" label="Baseline" />
+            <LegendDot swatch="bg-indigo-500" label={mode} />
           </div>
 
-          <div className="space-y-3 pt-1">
+          <div className="space-y-4">
             {Array.from({ length: maxRoutes }).map((_, idx) => {
               const bRoute = baselineSchedule[idx];
               const oRoute = optimizedSchedule[idx];
-              const bHeadway = bRoute ? bRoute.headway : 0;
-              const oHeadway = oRoute ? oRoute.headway : 0;
+              const bHeadway = bRoute?.headway ?? 0;
+              const oHeadway = oRoute?.headway ?? 0;
               const diff = oHeadway - bHeadway;
               const col = ROUTE_COLORS[idx % ROUTE_COLORS.length];
 
               return (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                    <span className="flex items-center space-x-1.5">
+                <div key={idx}>
+                  <div className="flex items-center justify-between text-[12px] mb-2">
+                    <span className="inline-flex items-center gap-2">
                       <span
-                        className="w-2.5 h-2.5 rounded-full"
+                        className="w-2 h-2 rounded-full"
                         style={{ backgroundColor: col.stroke }}
                       />
-                      <span>Route {idx + 1}</span>
+                      <span className="font-medium text-neutral-900">
+                        สาย {idx + 1}
+                      </span>
                     </span>
-                    <span className="text-[11px] text-slate-500">
-                      Baseline: {bHeadway.toFixed(1)}m | Opt:{" "}
-                      <span className="font-bold text-purple-700">
-                        {oHeadway.toFixed(1)}m
-                      </span>{" "}
-                      {diff < 0 ? (
-                        <span className="text-emerald-600 font-bold">
-                          ({diff.toFixed(1)}m เร็วขึ้น)
+
+                    {diff !== 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] tabular-nums">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            diff < 0 ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                        />
+                        <span
+                          className={
+                            diff < 0 ? "text-emerald-700" : "text-amber-700"
+                          }
+                        >
+                          {diff < 0 ? "ถี่ขึ้น" : "ห่างขึ้น"}{" "}
+                          {Math.abs(diff).toFixed(1)} น.
                         </span>
-                      ) : diff > 0 ? (
-                        <span className="text-amber-600">
-                          (+{diff.toFixed(1)}m)
-                        </span>
-                      ) : null}
-                    </span>
+                      </span>
+                    )}
                   </div>
 
-                  {/* Dual Bar Track */}
-                  <div className="space-y-1">
-                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-blue-400 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(bHeadway / maxHeadway) * 100}%` }}
-                      />
-                    </div>
-                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(oHeadway / maxHeadway) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                  <HeadwayBar
+                    label="Baseline"
+                    value={bHeadway}
+                    widthPct={(bHeadway / maxHeadway) * 100}
+                    barClass="bg-neutral-300"
+                  />
+                  <div className="h-1" />
+                  <HeadwayBar
+                    label={mode}
+                    value={oHeadway}
+                    widthPct={(oHeadway / maxHeadway) * 100}
+                    barClass="bg-indigo-500"
+                  />
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Bus Fleet Allocation Distribution Chart */}
-        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-800">
-              การจัดสรรกองรถบัส (Bus Fleet Distribution)
-            </h4>
-            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold">
-              รวม 30 คัน
-            </span>
+        {/* ─── Fleet distribution ──────────────────────────── */}
+        <div className="px-6 py-5 space-y-5">
+          <div className="flex items-baseline justify-between">
+            <div className="text-[13px] font-medium text-neutral-900">
+              การจัดสรรรถของ {mode}
+            </div>
+            <div className="text-[11px] text-neutral-500">
+              รวม{" "}
+              <span className="font-medium text-neutral-700 tabular-nums">
+                {totalBuses || 30}
+              </span>{" "}
+              คัน
+            </div>
           </div>
 
-          <div className="text-xs text-slate-500 pb-2 border-b border-slate-200">
-            แสดงจำนวนรถบัสไฟฟ้าที่วิ่งให้บริการประจำแต่ละเส้นทาง
-          </div>
-
-          {/* Visual Bus Stack Bar */}
-          <div className="pt-2">
-            <span className="text-xs font-semibold text-slate-700 block mb-1">
-              สัดส่วนจำนวนรถในแต่ละสาย ({selectedMode.toUpperCase()}):
-            </span>
-            <div className="w-full h-8 rounded-lg overflow-hidden flex shadow-inner border border-slate-300">
+          {/* Stacked proportion bar */}
+          <div>
+            <div className="text-[11px] text-neutral-500 mb-1.5">
+              สัดส่วนรถในแต่ละสาย
+            </div>
+            <div className="w-full h-7 rounded-lg overflow-hidden flex border border-neutral-200 bg-neutral-50">
               {optimizedSchedule.map((route, idx) => {
-                const buses = route.num_bus || 5;
-                const pct = (buses / 30) * 100;
+                const buses = route.num_bus || 0;
+                const pct = ((buses / (totalBuses || 30)) * 100).toFixed(2);
                 const col = ROUTE_COLORS[idx % ROUTE_COLORS.length];
                 return (
                   <div
                     key={idx}
-                    className="h-full flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
+                    className="h-full flex items-center justify-center text-white text-[11px] font-semibold tabular-nums transition-all duration-500"
                     style={{
                       width: `${pct}%`,
                       backgroundColor: col.stroke,
                     }}
-                    title={`Route ${idx + 1}: ${buses} คัน (${pct.toFixed(0)}%)`}
+                    title={`สาย ${idx + 1}: ${buses} คัน (${pct}%)`}
                   >
-                    R{idx + 1} ({buses})
+                    {Number(pct) > 8 ? buses : ""}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Route Details Breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+          {/* Route cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {optimizedSchedule.map((route, idx) => {
               const col = ROUTE_COLORS[idx % ROUTE_COLORS.length];
               return (
                 <div
                   key={idx}
-                  className="bg-white p-2.5 rounded-lg border border-slate-200 text-xs flex flex-col justify-between space-y-1"
+                  className="rounded-lg border border-neutral-200 bg-white px-3 py-2.5"
                 >
-                  <div className="flex items-center space-x-1.5 font-bold text-slate-800">
+                  <div className="flex items-center gap-1.5 mb-1">
                     <span
-                      className="w-2.5 h-2.5 rounded-full"
+                      className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: col.stroke }}
                     />
-                    <span>Route {idx + 1}</span>
+                    <span className="text-[12px] font-medium text-neutral-900">
+                      สาย {idx + 1}
+                    </span>
                   </div>
-                  <div className="text-slate-500 text-[11px]">
-                    จำนวนรถ:{" "}
-                    <span className="font-bold text-slate-800">
+                  <div className="text-[11px] text-neutral-500 flex items-baseline justify-between">
+                    <span>รถ</span>
+                    <span className="font-semibold text-neutral-900 tabular-nums">
                       {route.num_bus} คัน
                     </span>
                   </div>
-                  <div className="text-slate-500 text-[11px]">
-                    รอบเวลา (Cycle):{" "}
-                    <span className="font-semibold text-purple-700">
+                  <div className="text-[11px] text-neutral-500 flex items-baseline justify-between">
+                    <span>รอบ</span>
+                    <span className="font-medium text-neutral-700 tabular-nums">
                       {route.cycle_time.toFixed(1)} น.
                     </span>
                   </div>
@@ -186,6 +189,44 @@ export default function RouteFleetCharts({
             })}
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ────────────────────────────────────────────────────────── */
+
+function LegendDot({ swatch, label }: { swatch: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`inline-block w-2.5 h-2.5 rounded-sm ${swatch}`} />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function HeadwayBar({
+  label,
+  value,
+  widthPct,
+  barClass,
+}: {
+  label: string;
+  value: number;
+  widthPct: number;
+  barClass: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-16 text-[11px] text-neutral-500 shrink-0">{label}</div>
+      <div className="flex-1 h-2 bg-neutral-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+          style={{ width: `${widthPct}%` }}
+        />
+      </div>
+      <div className="w-14 text-right text-[12px] font-medium text-neutral-800 tabular-nums shrink-0">
+        {value.toFixed(1)} น.
       </div>
     </div>
   );

@@ -60,7 +60,13 @@ const stopLabel = (id: string) => {
   return s ? `${s.nameTh} (${s.nameEn})` : id;
 };
 
-export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: string }) {
+const stopShort = (id: string) => CAMPUS_STOPS[id]?.nameTh ?? id;
+
+export default function TripPlanner({
+  selectedAlgorithm,
+}: {
+  selectedAlgorithm: string;
+}) {
   const [metadata, setMetadata] = useState<PlannerMetadata | null>(null);
   const [origin, setOrigin] = useState<string>("Dorm");
   const [destination, setDestination] = useState<string>("Lecture");
@@ -70,7 +76,6 @@ export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: 
   const [result, setResult] = useState<PlanResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load planner metadata (building→stop defaults — walk time จะ auto-pick ที่ backend)
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/planner-metadata")
       .then((r) => (r.ok ? r.json() : null))
@@ -82,8 +87,6 @@ export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: 
     setLoading(true);
     setError(null);
     try {
-      // ส่งเฉพาะข้อมูลที่ user กรอก — walk/buffer/arrive_before ใช้ default จาก backend
-      // (ค่าเริ่มต้นจาก paper + WALK_TIME_MIN ตามปลายทางใน src/data/timetable.py)
       const res = await fetch("http://127.0.0.1:8000/api/plan-trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,7 +118,6 @@ export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: 
   );
 
   const buildingOptions = useMemo(() => {
-    // Flat list of unique building codes grouped by their stop
     const items: Array<{ code: string; stop: string }> = [];
     if (metadata?.building_to_stop) {
       Object.entries(metadata.building_to_stop).forEach(([code, stop]) =>
@@ -127,246 +129,264 @@ export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: 
 
   const bestOption = result?.options?.[0];
   const alternatives = result?.options?.slice(1) ?? [];
+  const mode = selectedAlgorithm.toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-          🎯 Trip Planner — เรียนที่ไหน ต้องรอรถเวลาอะไร
+    <div className="space-y-5">
+      {/* ─── Intro ─────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl border border-neutral-200 p-6">
+        <h3 className="text-[15px] font-semibold text-neutral-900">
+          วางแผนไปเรียนให้ทัน
         </h3>
-        <p className="text-sm text-slate-600 mt-1">
-          กรอกเวลาเรียนและปลายทาง ระบบจะคำนวณให้ว่า{" "}
-          <b>ต้องไปรอที่ป้ายต้นทางเวลาเท่าไรเพื่อให้ไปถึงเรียนทัน</b>
+        <p className="text-[13px] text-neutral-600 mt-1">
+          กรอกเวลาเรียนและปลายทาง ระบบจะคำนวณว่า{" "}
+          <span className="font-medium text-neutral-900">
+            ต้องไปรอที่ป้ายต้นทางกี่โมงถึงจะทัน
+          </span>
         </p>
-        <p className="text-[11px] text-slate-500 mt-2 italic">
-          อ้างอิง Díaz-Ramírez et al. (2022) §3.2 — ระบบใช้ค่าเฉลี่ยที่สมเหตุสมผล
-          (เวลาเดินจากป้าย, buffer, เผื่อก่อนเรียน) โดยอัตโนมัติ ไม่ต้องกรอกเอง
+        <p className="text-[11px] text-neutral-500 mt-2">
+          อ้างอิง Díaz-Ramírez et al. (2022) §3.2 — ระบบใช้ค่า default ของเวลาเดิน,
+          buffer, และ arrive-before ให้โดยอัตโนมัติ
         </p>
-      </div>
+      </section>
 
-      {/* Form — เหลือแค่ 3 ช่องสำคัญ (ต้นทาง / ปลายทาง / เวลาเรียน) */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-            🏠 ต้นทาง (ป้ายที่ขึ้นรถ)
-          </label>
-          <select
-            value={origin}
-            onChange={(e) => setOrigin(e.target.value)}
-            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg bg-slate-50"
-          >
-            {stopOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-            🏫 ปลายทาง (ตึก/ป้ายใกล้ตึก)
-          </label>
-          <select
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg bg-slate-50"
-          >
-            <optgroup label="ป้ายรถ">
+      {/* ─── Form ──────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <FormField label="ต้นทาง" sub="ป้ายที่ขึ้นรถ">
+            <select
+              value={origin}
+              onChange={(e) => setOrigin(e.target.value)}
+              className="w-full h-10 px-3 text-[13px] bg-white border border-neutral-200 rounded-lg text-neutral-800 hover:border-neutral-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+            >
               {stopOptions.map((o) => (
-                <option key={`stop-${o.value}`} value={o.value}>
+                <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
-            </optgroup>
-            {buildingOptions.length > 0 && (
-              <optgroup label="รหัสตึก (map เป็นป้าย)">
-                {buildingOptions.map((b) => (
-                  <option key={`bld-${b.code}`} value={b.code}>
-                    {b.code} → {CAMPUS_STOPS[b.stop]?.nameTh ?? b.stop}
+            </select>
+          </FormField>
+
+          <FormField label="ปลายทาง" sub="ตึก หรือ ป้ายใกล้ตึก">
+            <select
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              className="w-full h-10 px-3 text-[13px] bg-white border border-neutral-200 rounded-lg text-neutral-800 hover:border-neutral-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+            >
+              <optgroup label="ป้ายรถ">
+                {stopOptions.map((o) => (
+                  <option key={`stop-${o.value}`} value={o.value}>
+                    {o.label}
                   </option>
                 ))}
               </optgroup>
-            )}
-          </select>
+              {buildingOptions.length > 0 && (
+                <optgroup label="รหัสตึก">
+                  {buildingOptions.map((b) => (
+                    <option key={`bld-${b.code}`} value={b.code}>
+                      {b.code} → {CAMPUS_STOPS[b.stop]?.nameTh ?? b.stop}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </FormField>
+
+          <FormField label="เวลาเริ่มเรียน" sub="นาฬิกา 24 ชม.">
+            <input
+              type="time"
+              value={classTime}
+              onChange={(e) => setClassTime(e.target.value)}
+              className="w-full h-10 px-3 text-[13px] bg-white border border-neutral-200 rounded-lg text-neutral-800 hover:border-neutral-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none font-mono tabular-nums transition"
+            />
+          </FormField>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-            ⏰ เวลาเริ่มเรียน
-          </label>
-          <input
-            type="time"
-            value={classTime}
-            onChange={(e) => setClassTime(e.target.value)}
-            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg bg-slate-50 font-mono"
-          />
-        </div>
-
-        <div className="md:col-span-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+        <div className="px-6 py-4 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-3">
+          <label className="inline-flex items-center gap-2 text-[12px] text-neutral-600 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={useOptimized}
               onChange={(e) => setUseOptimized(e.target.checked)}
-              className="w-4 h-4"
+              className="w-4 h-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
             />
-            ใช้ตารางที่ Optimized ล่าสุด ({selectedAlgorithm.toUpperCase()})
-            — ไม่เลือก = ใช้ Baseline
+            ใช้ตารางที่ Optimized ล่าสุด ({mode})
+            <span className="text-neutral-400">— ไม่เลือก = ใช้ Baseline</span>
           </label>
+
           <button
             onClick={submit}
             disabled={loading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl disabled:opacity-50 text-sm flex items-center gap-2 shadow-sm"
+            className="h-10 px-5 inline-flex items-center gap-2 bg-neutral-900 text-white rounded-lg text-[13px] font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            <span>{loading ? "⏳" : "🧮"}</span>
-            <span>{loading ? "กำลังคำนวณ..." : "คำนวณเวลาที่ต้องไปรอ"}</span>
+            {loading ? "กำลังคำนวณ…" : "คำนวณเวลาที่ต้องไปรอ"}
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Error */}
+      {/* ─── Error ─────────────────────────────────────────── */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-4 text-sm">
-          ❌ {error}
+        <div className="flex items-start gap-3 px-4 py-3 bg-white border border-neutral-200 rounded-xl text-[13px] text-neutral-800">
+          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+          <div>
+            <div className="font-semibold text-neutral-900">
+              เรียก API ไม่สำเร็จ
+            </div>
+            <div className="text-neutral-600 mt-0.5">{error}</div>
+          </div>
         </div>
       )}
 
-      {/* Result: Best Recommendation Card */}
+      {/* ─── Best option result ───────────────────────────── */}
       {result && bestOption && (
-        <div className="bg-gradient-to-br from-emerald-50 to-blue-50 rounded-2xl border-2 border-emerald-300 p-6 shadow-md">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+        <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100 flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <div className="text-xs uppercase font-bold tracking-wider text-emerald-700">
-                แผนที่แนะนำ (ขึ้นรถสายที่สุดที่ยังทัน)
+              <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">
+                แผนที่แนะนำ
               </div>
-              <div className="text-sm text-slate-600 mt-0.5">
-                ใช้ตาราง: <b>{result.algorithm}</b> • เส้นทาง:{" "}
-                {bestOption.route_path.join(" → ")}
-              </div>
+              <h4 className="text-[15px] font-semibold text-neutral-900 mt-1">
+                ไปรอที่ป้ายเวลา{" "}
+                <span className="text-indigo-600 tabular-nums">
+                  {formatHHMM(bestOption.recommended_at_stop_minutes)}
+                </span>
+              </h4>
+              <p className="text-[12px] text-neutral-500 mt-1">
+                ใช้ตาราง{" "}
+                <span className="font-medium text-neutral-700">
+                  {result.algorithm}
+                </span>{" "}
+                · เส้นทาง {bestOption.route_path.join(" → ")}
+              </p>
             </div>
+
             <span
-              className={`text-xs font-bold px-3 py-1 rounded-full ${
+              className={`inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-[12px] font-medium ${
                 bestOption.comfortable
-                  ? "bg-emerald-500 text-white"
-                  : "bg-amber-500 text-white"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
               }`}
             >
-              {bestOption.comfortable ? "✓ สบาย" : "⚠️ ตึง"}
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  bestOption.comfortable ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+              />
+              {bestOption.comfortable ? "สบาย" : "ตึง"}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <StepCard
-              icon="🏠"
-              label="ไปรอที่ป้าย"
-              value={formatHHMM(bestOption.recommended_at_stop_minutes)}
-              hint={stopLabel(bestOption.origin_stop)}
-              highlight
-            />
-            <StepCard
-              icon="🚌"
-              label="รถถึงป้าย"
-              value={formatHHMM(bestOption.bus_arrives_origin_minutes)}
-              hint={`ทุก ${bestOption.headway_minutes.toFixed(1)} นาที`}
-            />
-            <StepCard
-              icon="🏁"
-              label="ลงที่ป้าย"
-              value={formatHHMM(bestOption.bus_arrives_destination_minutes)}
-              hint={`${stopLabel(bestOption.destination_stop)} • นั่งรถ ${bestOption.trip_duration_minutes.toFixed(1)} นาที`}
-            />
-            <StepCard
-              icon="🚶"
-              label="ถึงอาคาร"
-              value={formatHHMM(bestOption.walk_arrival_at_building_minutes)}
-              hint={`เดิน ${bestOption.walk_minutes.toFixed(0)} นาที`}
-            />
-            <StepCard
-              icon="🎓"
-              label="เริ่มเรียน"
-              value={formatHHMM(bestOption.class_start_minutes)}
-              hint={`เผื่อ ${bestOption.slack_before_class_minutes.toFixed(1)} นาที`}
-              highlight
-            />
+          {/* Timeline */}
+          <div className="px-6 py-5">
+            <ol className="relative">
+              <TimelineRow
+                step={1}
+                label="ไปรอที่ป้าย"
+                time={formatHHMM(bestOption.recommended_at_stop_minutes)}
+                hint={stopShort(bestOption.origin_stop)}
+                strong
+              />
+              <TimelineRow
+                step={2}
+                label="รถถึงป้ายต้นทาง"
+                time={formatHHMM(bestOption.bus_arrives_origin_minutes)}
+                hint={`ปล่อยทุก ${bestOption.headway_minutes.toFixed(1)} นาที`}
+              />
+              <TimelineRow
+                step={3}
+                label="ลงที่ป้ายปลายทาง"
+                time={formatHHMM(bestOption.bus_arrives_destination_minutes)}
+                hint={`${stopShort(
+                  bestOption.destination_stop
+                )} · นั่งรถ ${bestOption.trip_duration_minutes.toFixed(1)} นาที`}
+              />
+              <TimelineRow
+                step={4}
+                label="ถึงอาคาร"
+                time={formatHHMM(bestOption.walk_arrival_at_building_minutes)}
+                hint={`เดิน ${bestOption.walk_minutes.toFixed(0)} นาที`}
+              />
+              <TimelineRow
+                step={5}
+                label="เริ่มเรียน"
+                time={formatHHMM(bestOption.class_start_minutes)}
+                hint={`เผื่อก่อนเรียน ${bestOption.slack_before_class_minutes.toFixed(
+                  1
+                )} นาที`}
+                strong
+                last
+              />
+            </ol>
           </div>
 
-          <div className="mt-5 border-t border-emerald-200 pt-4 text-sm text-slate-700">
-            <b>สรุป:</b> ไปรอที่ป้าย{" "}
-            <span className="font-mono bg-white px-2 py-0.5 rounded border">
-              {stopLabel(bestOption.origin_stop)}
-            </span>{" "}
-            เวลา{" "}
-            <span className="font-mono font-bold text-emerald-700 bg-white px-2 py-0.5 rounded border">
-              {formatHHMM(bestOption.recommended_at_stop_minutes)}
-            </span>{" "}
-            → ขึ้นรถ → ลงที่ป้าย{" "}
-            <span className="font-mono bg-white px-2 py-0.5 rounded border">
-              {stopLabel(bestOption.destination_stop)}
-            </span>{" "}
-            → เดิน {bestOption.walk_minutes.toFixed(0)} นาที → ถึงอาคาร{" "}
-            <span className="font-mono bg-white px-2 py-0.5 rounded border">
-              {formatHHMM(bestOption.walk_arrival_at_building_minutes)}
-            </span>{" "}
-            → เรียน {formatHHMM(bestOption.class_start_minutes)}
-            <br />
-            <span className="text-xs text-slate-500 mt-1 block">
-              Deadline ต้องถึงป้ายปลายทางก่อน{" "}
+          <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/60 text-[12px] text-neutral-600 leading-relaxed">
+            <span className="font-medium text-neutral-800">หมายเหตุ:</span>{" "}
+            ต้องถึงป้ายปลายทางก่อน{" "}
+            <span className="font-mono font-semibold text-neutral-900 tabular-nums">
               {formatHHMM(
                 bestOption.class_start_minutes -
                   result.walk_minutes -
                   result.buffer_minutes -
                   result.arrive_before_minutes
-              )}{" "}
-              ({result.walk_minutes}+{result.buffer_minutes}+
-              {result.arrive_before_minutes} นาทีก่อนเริ่มเรียน)
-            </span>
+              )}
+            </span>{" "}
+            (รวมเวลาเดิน {result.walk_minutes} + buffer {result.buffer_minutes} +
+            เผื่อ {result.arrive_before_minutes} นาที)
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Alternatives */}
+      {/* ─── Alternatives ─────────────────────────────────── */}
       {alternatives.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h4 className="text-sm font-bold text-slate-800 mb-3">
-            🔄 Alternatives (เผื่อตื่นสายหรือมีประชุมก่อน)
-          </h4>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-neutral-100">
+            <h4 className="text-[15px] font-semibold text-neutral-900">
+              ทางเลือกอื่น
+            </h4>
+            <p className="text-[12px] text-neutral-500 mt-0.5">
+              เผื่อตื่นสายหรือมีประชุมก่อน
+            </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-[13px]">
               <thead>
-                <tr className="text-xs uppercase tracking-wider text-slate-500 border-b">
-                  <th className="text-left py-2">ไปรอที่ป้าย</th>
-                  <th className="text-left py-2">รถถึง</th>
-                  <th className="text-left py-2">ลงที่ป้าย</th>
-                  <th className="text-left py-2">ถึงอาคาร</th>
-                  <th className="text-right py-2">เผื่อก่อนเรียน</th>
+                <tr className="text-[11px] uppercase tracking-wider text-neutral-500 bg-neutral-50/60">
+                  <th className="text-left px-6 py-3 font-medium">ไปรอที่ป้าย</th>
+                  <th className="text-left px-6 py-3 font-medium">รถถึง</th>
+                  <th className="text-left px-6 py-3 font-medium">ลงที่ป้าย</th>
+                  <th className="text-left px-6 py-3 font-medium">ถึงอาคาร</th>
+                  <th className="text-right px-6 py-3 font-medium">เผื่อก่อนเรียน</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-neutral-100">
                 {alternatives.map((o, i) => (
-                  <tr key={i} className="border-b border-slate-100">
-                    <td className="py-2 font-mono font-bold text-slate-800">
+                  <tr key={i} className="hover:bg-neutral-50/60 transition">
+                    <td className="px-6 py-3 font-mono font-semibold text-neutral-900 tabular-nums">
                       {formatHHMM(o.recommended_at_stop_minutes)}
                     </td>
-                    <td className="py-2 font-mono text-slate-700">
+                    <td className="px-6 py-3 font-mono text-neutral-700 tabular-nums">
                       {formatHHMM(o.bus_arrives_origin_minutes)}
                     </td>
-                    <td className="py-2 font-mono text-slate-700">
+                    <td className="px-6 py-3 font-mono text-neutral-700 tabular-nums">
                       {formatHHMM(o.bus_arrives_destination_minutes)}
                     </td>
-                    <td className="py-2 font-mono text-slate-700">
+                    <td className="px-6 py-3 font-mono text-neutral-700 tabular-nums">
                       {formatHHMM(o.walk_arrival_at_building_minutes)}
                     </td>
-                    <td className="py-2 text-right">
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          o.comfortable
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {o.slack_before_class_minutes.toFixed(1)} นาที
+                    <td className="px-6 py-3 text-right">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium tabular-nums">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            o.comfortable ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                        />
+                        <span
+                          className={
+                            o.comfortable ? "text-emerald-700" : "text-amber-700"
+                          }
+                        >
+                          {o.slack_before_class_minutes.toFixed(1)} น.
+                        </span>
                       </span>
                     </td>
                   </tr>
@@ -374,61 +394,118 @@ export default function TripPlanner({ selectedAlgorithm }: { selectedAlgorithm: 
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* No options */}
+      {/* ─── No options ────────────────────────────────────── */}
       {result && result.options.length === 0 && (
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-5 text-rose-900 text-sm">
-          <b>❌ ไม่มีรถเที่ยวใดทัน</b> — ลองย้ายเวลาเรียนให้ช้าลง หรือเพิ่มจำนวนรถในเส้นทางนี้
-          <br />
-          <span className="text-xs text-rose-700 mt-1 block">
-            เส้นทางที่พบไม่มีเที่ยวที่ขึ้นต้นทาง {stopLabel(result.origin_stop)} และ
-            ลงที่ {stopLabel(result.destination_stop)} ก่อน Deadline
-          </span>
-        </div>
+        <section className="bg-white rounded-2xl border border-neutral-200 p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+            <div>
+              <div className="text-[14px] font-semibold text-neutral-900">
+                ไม่มีรถเที่ยวใดทันในเวลาที่กำหนด
+              </div>
+              <div className="text-[12px] text-neutral-600 mt-1">
+                ลองย้ายเวลาเรียนให้ช้าลง หรือเพิ่มจำนวนรถในเส้นทางนี้ —
+                ยังไม่มีรถที่ขึ้นจาก{" "}
+                <span className="font-medium text-neutral-800">
+                  {stopShort(result.origin_stop)}
+                </span>{" "}
+                ไปลงที่{" "}
+                <span className="font-medium text-neutral-800">
+                  {stopShort(result.destination_stop)}
+                </span>{" "}
+                ทันเวลา
+              </div>
+            </div>
+          </div>
+        </section>
       )}
     </div>
   );
 }
 
-function StepCard({
-  icon,
+/* ──────────────────────────────────────────────────────────
+   Sub-components
+   ────────────────────────────────────────────────────────── */
+
+function FormField({
   label,
-  value,
-  hint,
-  highlight,
+  sub,
+  children,
 }: {
-  icon: string;
   label: string;
-  value: string;
-  hint: string;
-  highlight?: boolean;
+  sub: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div
-      className={`rounded-xl p-3 border ${
-        highlight
-          ? "bg-white border-emerald-400 shadow-sm"
-          : "bg-white/70 border-slate-200"
-      }`}
-    >
-      <div className="flex items-center gap-1.5">
-        <span className="text-lg">{icon}</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-          {label}
-        </span>
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-[12px] font-medium text-neutral-800">{label}</span>
+        <span className="text-[11px] text-neutral-400">{sub}</span>
       </div>
-      <div
-        className={`text-xl font-bold font-mono mt-1 ${
-          highlight ? "text-emerald-700" : "text-slate-800"
+      {children}
+    </div>
+  );
+}
+
+function TimelineRow({
+  step,
+  label,
+  time,
+  hint,
+  strong,
+  last,
+}: {
+  step: number;
+  label: string;
+  time: string;
+  hint: string;
+  strong?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <li className="relative pl-10 pb-5 last:pb-0">
+      {/* Vertical line */}
+      {!last && (
+        <span className="absolute left-[11px] top-6 bottom-0 w-px bg-neutral-200" />
+      )}
+
+      {/* Node */}
+      <span
+        className={`absolute left-0 top-1 w-6 h-6 inline-flex items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
+          strong
+            ? "bg-neutral-900 text-white"
+            : "bg-neutral-100 text-neutral-700"
         }`}
       >
-        {value}
+        {step}
+      </span>
+
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <div
+            className={`text-[13px] ${
+              strong
+                ? "font-semibold text-neutral-900"
+                : "font-medium text-neutral-800"
+            }`}
+          >
+            {label}
+          </div>
+          <div className="text-[11px] text-neutral-500 mt-0.5">{hint}</div>
+        </div>
+        <div
+          className={`font-mono tabular-nums shrink-0 ${
+            strong
+              ? "text-[18px] font-semibold text-neutral-900"
+              : "text-[14px] font-medium text-neutral-700"
+          }`}
+        >
+          {time}
+        </div>
       </div>
-      <div className="text-[11px] text-slate-500 mt-0.5 truncate" title={hint}>
-        {hint}
-      </div>
-    </div>
+    </li>
   );
 }

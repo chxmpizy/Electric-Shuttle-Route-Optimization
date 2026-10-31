@@ -1,0 +1,233 @@
+[
+    {
+        "path": [
+            "Dome",
+            "Gate1",
+            "SC1",
+            "Library",
+            "Green",
+            "Dorm"
+        ],
+        "num_bus": 4,
+        "cycle_time": 19.36,
+        "headway": 4.84,
+        "startTime": 450,
+        "endTime": 1260,
+        "timetable": [
+            {
+                "stop": "Dome",
+                "arrival_time": 450.0
+            },
+            {
+                "stop": "Gate1",
+                "arrival_time": 454.03
+            },
+            {
+                "stop": "SC1",
+                "arrival_time": 456.57
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 458.67
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 460.88
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 462.86
+            }
+        ]
+    },
+    {
+        "path": [
+            "Convention",
+            "Social",
+            "Lecture",
+            "Park",
+            "Health",
+            "Hospital"
+        ],
+        "num_bus": 1,
+        "cycle_time": 18.81,
+        "headway": 18.81,
+        "startTime": 450,
+        "endTime": 1080,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 450.0
+            },
+            {
+                "stop": "Social",
+                "arrival_time": 452.59
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 455.03
+            },
+            {
+                "stop": "Park",
+                "arrival_time": 456.96
+            },
+            {
+                "stop": "Health",
+                "arrival_time": 460.41
+            },
+            {
+                "stop": "Hospital",
+                "arrival_time": 462.31
+            }
+        ]
+    },
+    {
+        "path": [
+            "SC1",
+            "Library",
+            "Green",
+            "Dorm",
+            "Convention",
+            "Lecture"
+        ],
+        "num_bus": 7,
+        "cycle_time": 17.08,
+        "headway": 2.44,
+        "startTime": 420,
+        "endTime": 1260,
+        "timetable": [
+            {
+                "stop": "SC1",
+                "arrival_time": 420.0
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 422.1
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 424.31
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 426.29
+            },
+            {
+                "stop": "Convention",
+                "arrival_time": 428.03
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 430.58
+            }
+        ]
+    },
+    {
+        "path": [
+            "SC2_SC3",
+            "Green",
+            "Library",
+            "Dorm",
+            "Lecture"
+        ],
+        "num_bus": 2,
+        "cycle_time": 16.31,
+        "headway": 8.15,
+        "startTime": 420,
+        "endTime": 1260,
+        "timetable": [
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 420.0
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 422.52
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 424.73
+            },
+            {
+                "stop": "Dorm",
+                "arrival_time": 427.02
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 429.81
+            }
+        ]
+    },
+    {
+        "path": [
+            "SC1",
+            "Library",
+            "Green",
+            "SC2_SC3",
+            "Terminal"
+        ],
+        "num_bus": 2,
+        "cycle_time": 15.36,
+        "headway": 7.68,
+        "startTime": 420,
+        "endTime": 1260,
+        "timetable": [
+            {
+                "stop": "SC1",
+                "arrival_time": 420.0
+            },
+            {
+                "stop": "Library",
+                "arrival_time": 422.1
+            },
+            {
+                "stop": "Green",
+                "arrival_time": 424.31
+            },
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 426.83
+            },
+            {
+                "stop": "Terminal",
+                "arrival_time": 428.86
+            }
+        ]
+    },
+    {
+        "path": [
+            "Convention",
+            "Social",
+            "Lecture",
+            "Health",
+            "SC2_SC3"
+        ],
+        "num_bus": 2,
+        "cycle_time": 17.89,
+        "headway": 8.95,
+        "startTime": 420,
+        "endTime": 1260,
+        "timetable": [
+            {
+                "stop": "Convention",
+                "arrival_time": 420.0
+            },
+            {
+                "stop": "Social",
+                "arrival_time": 422.59
+            },
+            {
+                "stop": "Lecture",
+                "arrival_time": 425.03
+            },
+            {
+                "stop": "Health",
+                "arrival_time": 428.05
+            },
+            {
+                "stop": "SC2_SC3",
+                "arrival_time": 431.39
+            }
+        ]
+    }
+]
