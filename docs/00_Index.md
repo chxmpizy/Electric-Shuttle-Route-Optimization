@@ -50,6 +50,7 @@ graph TD
 | **05** | [[05_Implementation_Roadmap_and_Action_Plan\|05. Implementation Action Plan]] | แผนปฏิบัติงานทีละขั้น (Phase 1–6), การแก้โค้ดแต่ละโมดูล และ Checklist ตรวจสอบ | `Ready to Execute` |
 | **06** | [[06_Input_and_Assumptions\|06. Input Data & Assumptions]] | แยก Input เป็น ข้อมูลจริง / อนุมาน / สมมติ พร้อม source และ impact (ตอบ feedback #4) | `Completed` |
 | **07** | [[07_Fitness_Weights_Rationale\|07. Fitness Weights Rationale & Sensitivity]] | เหตุผลของน้ำหนัก fitness + ผลทดลอง sensitivity 8 แบบ (ตอบ feedback #1) | `Completed` |
+| **08** | [[08_Advisor_Feedback_Status_Update\|08. Advisor Feedback — Status Update]] | สรุปสถานะต่อข้อเสนอแนะ 11 ข้อของอาจารย์ (ณ 2026-11-01) พร้อม benchmark v2 และ backlog | `Current` |
 
 ---
 
