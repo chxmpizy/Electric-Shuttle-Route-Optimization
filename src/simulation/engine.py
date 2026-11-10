@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 from .Bus import Bus
 from .Passenger import Passenger
+from data.graph import light_delay_min
 
 # ─── Legacy STOP_WEIGHTS ใช้สำหรับ Random Mode เท่านั้น ────────────────────
 STOP_WEIGHTS = {
@@ -52,24 +53,74 @@ def _get_segment_time(
         return fallback_min
 
 
+def _loop_stops(route_path: list[str]) -> list[str]:
+    """ลำดับป้ายของวงรอบ — ตัดป้ายสุดท้ายที่ซ้ำกับป้ายแรกออก (เส้นทางปิด)"""
+    if len(route_path) > 1 and route_path[0] == route_path[-1]:
+        return route_path[:-1]
+    return route_path
+
+
 def _build_segment_times(
     route_path: list[str],
     graph: Optional["nx.DiGraph"],
     cycle_time: float,
-) -> list[float]:
+) -> tuple[list[float], list[float], list[Optional[float]]]:
     """
-    สร้าง list ของเวลาเดินทางแต่ละช่วงใน route_path
+    สร้างเวลาเดินทางแต่ละช่วงของวงรอบ: segment i = ป้าย i → ป้าย i+1 (ช่วงสุดท้ายวนกลับป้ายแรก)
+
+    คืนค่า (expected, base, light_pos)
+        expected  — เวลาคาดหมายรวมไฟแดงเฉลี่ย (ใช้ประมาณการ)
+        base      — เวลาวิ่งไม่รวมไฟ
+        light_pos — ตำแหน่งไฟจราจรบนช่วงนั้น (สัดส่วน 0–1) หรือ None
     ถ้ามี graph ใช้ข้อมูลจริง ถ้าไม่มี fallback เป็นการหารเฉลี่ย
     """
-    if graph is not None:
-        times = []
-        for i in range(len(route_path) - 1):
-            times.append(_get_segment_time(graph, route_path[i], route_path[i + 1]))
-        return times
-    # Fallback: หารเฉลี่ย (legacy)
-    n = max(1, len(route_path) - 1)
-    avg = cycle_time / n
-    return [avg] * n
+    stops = _loop_stops(route_path)
+    n = max(1, len(stops))
+    if graph is None:
+        avg = cycle_time / n
+        return [avg] * n, [avg] * n, [None] * n
+    expected, base, lights = [], [], []
+    for i in range(n):
+        a, b = stops[i], stops[(i + 1) % n]
+        edge = graph.get_edge_data(a, b) if a != b else None
+        if edge is not None and "base_min" in edge:
+            expected.append(float(edge["weight"]))
+            base.append(float(edge["base_min"]))
+            lights.append(edge.get("light_pos"))
+        else:
+            # ไม่มีถนนตรง → ใช้ shortest path (เวลาคาดหมาย ไม่แยกไฟ)
+            t = _get_segment_time(graph, a, b) if a != b else 0.0
+            expected.append(t)
+            base.append(t)
+            lights.append(None)
+    return expected, base, lights
+
+
+def _actual_segment_time(bus: Bus, idx: int, depart: float) -> float:
+    """เวลาวิ่งช่วง idx ถ้าออกจากป้ายเวลา depart — คิดไฟแดงตามเวลาที่รถไปถึงไฟจริง"""
+    base = bus.segment_base[idx]
+    pos = bus.segment_light[idx]
+    if pos is None:
+        return bus.segment_times[idx]
+    return base + light_delay_min(depart + base * pos)
+
+
+def _would_be_on_time(bus: Bus, passenger: Passenger, t: float) -> bool:
+    """
+    ถ้าผู้โดยสารได้ขึ้นรถคันนี้ที่เวลา t จะถึงอาคารทันเรียนหรือไม่
+    ใช้แยกกรณี "รถเต็ม" (รถคันที่ทันมาแล้วแต่ขึ้นไม่ได้) ออกจาก "มาไม่ทัน"
+    """
+    if passenger.class_start_time is None:
+        return True
+    n = len(bus.route)
+    idx = bus.current_index
+    ride = 0.0
+    for _ in range(n):
+        ride += bus.segment_times[idx % len(bus.segment_times)] + DWELL_TIME_MIN
+        idx = (idx + 1) % n
+        if bus.route[idx] == passenger.destination:
+            break
+    return t + ride + passenger.walk_time_minutes <= passenger.class_start_time
 
 
 def run_simulation(
@@ -98,8 +149,9 @@ def run_simulation(
     -------
     dict ของสถิติการจำลอง รวมถึง on_time_rate, avg_delay, stranded_count
     """
-    if seed is not None:
-        random.seed(seed)
+    # ใช้ RNG ของตัวเอง ห้าม random.seed() แบบ global — ไม่งั้นจะรีเซ็ต RNG ของ
+    # GA/SA/PSO/ACO ทุกครั้งที่ evaluate ทำให้ทุก seed ได้คำตอบเดียวกัน
+    rng = random.Random(seed)
 
     # ─── 1. สร้างคิวผู้โดยสารแต่ละป้าย ────────────────────────────────────
     queues: dict[str, list[Passenger]] = {stop: [] for stop in stops}
@@ -131,13 +183,13 @@ def run_simulation(
                 continue
             hour = t / 60
             demand_prob = 0.8 if 7.5 <= hour < 10 or 11.5 <= hour < 13.5 else 0.25
-            if random.random() >= demand_prob:
+            if rng.random() >= demand_prob:
                 continue
             wts = [STOP_WEIGHTS.get(s, 100) for s in stops]
-            origin = random.choices(stops, weights=wts, k=1)[0]
-            dest = random.choices(stops, weights=wts, k=1)[0]
+            origin = rng.choices(stops, weights=wts, k=1)[0]
+            dest = rng.choices(stops, weights=wts, k=1)[0]
             while dest == origin:
-                dest = random.choices(stops, weights=wts, k=1)[0]
+                dest = rng.choices(stops, weights=wts, k=1)[0]
             p = Passenger(
                 passenger_id=pid,
                 origin=origin,
@@ -161,18 +213,21 @@ def run_simulation(
         cycle_time = route_info.get("cycle_time", len(route_path) - 1)
         end_time = route_info["endTime"]
 
-        seg_times = _build_segment_times(route_path, graph, cycle_time)
+        seg_times, seg_base, seg_light = _build_segment_times(route_path, graph, cycle_time)
 
         for i in range(num_bus):
-            buses.append(Bus(
+            bus = Bus(
                 bus_id=bus_id,
                 capacity=bus_capacity,
-                route=route_path,
+                route=_loop_stops(route_path),
                 headway=headway,
                 next_depart_time=start_time + (i * headway),
                 end_time=end_time,
                 segment_times=seg_times,
-            ))
+            )
+            bus.segment_base = seg_base
+            bus.segment_light = seg_light
+            buses.append(bus)
             bus_id += 1
 
     # ─── 3. Event Log สำหรับ Monitor / Visualization ───────────────────────
@@ -200,19 +255,18 @@ def run_simulation(
             if t < bus.next_depart_time or t > bus.endTime:
                 continue
 
+            # เวลาออกจากป้ายนี้ = ถึงป้าย + จอดรับส่ง (+ พักปลายรอบที่ป้ายแรก)
+            depart = t + DWELL_TIME_MIN
             if bus.started:
-                # เคลื่อนไปป้ายถัดไป
+                # เคลื่อนมาถึงป้ายถัดไป
                 bus.current_index = (bus.current_index + 1) % len(bus.route)
-                # อัปเดตเวลาออกรถถัดไปตาม segment time จริง
-                seg_idx = (bus.current_index - 1) % len(bus.segment_times)
-                bus.next_depart_time = t + bus.segment_times[seg_idx] + DWELL_TIME_MIN
-                # Layover ที่ป้ายแรก (ปลายรอบ)
                 if bus.current_index == 0:
-                    bus.next_depart_time += LAYOVER_TIME_MIN
+                    depart += LAYOVER_TIME_MIN
                     bus.trip_count += 1
             else:
                 bus.started = True
-                bus.next_depart_time = t + (bus.segment_times[0] if bus.segment_times else 1.0) + DWELL_TIME_MIN
+            # เวลาถึงป้ายถัดไป = ออกจากป้าย + เวลาวิ่งช่วงนี้ (คิดไฟแดงตามเวลาจริง)
+            bus.next_depart_time = depart + _actual_segment_time(bus, bus.current_index, depart)
 
             current_stop = bus.route[bus.current_index]
 
@@ -236,6 +290,9 @@ def run_simulation(
                     bus.passengers.append(p)
                     boarded.append(p)
                 else:
+                    if p.destination in bus.route and _would_be_on_time(bus, p, t):
+                        # รถรอบที่ยังพาไปทันเรียนมาถึงแล้ว แต่เต็ม → กรณี BUS_FULL
+                        p.denied_full_count += 1
                     new_queue.append(p)
             if current_stop in queues:
                 queues[current_stop] = new_queue
@@ -280,6 +337,11 @@ def run_simulation(
     avg_travel = sum(travel_times) / len(travel_times) if travel_times else 0.0
     avg_delay = sum(delay_times) / len(delay_times) if delay_times else 0.0
     on_time_rate = len(on_time) / len(with_class) * 100 if with_class else 0.0
+
+    # ─── 3 กรณีของ goal function (ดู Passenger.outcome) ──────────────────
+    outcome_counts = {"ON_TIME": 0, "MISSED": 0, "BUS_FULL": 0}
+    for p in all_passengers:
+        outcome_counts[p.outcome] += 1
 
     # ─── Per-bus utilization (feedback #6: Monitor each bus) ──────────────
     bus_stats: list[dict] = []
@@ -362,6 +424,10 @@ def run_simulation(
         "on_time_rate_pct": round(on_time_rate, 2),
         "avg_delay_minutes": round(avg_delay, 2),
         "max_delay_minutes": round(max(delay_times, default=0.0), 2),
+        # ─ 3 กรณีของ goal function ─
+        "case_on_time": outcome_counts["ON_TIME"],      # มาทันป้ายและขึ้นรถทัน
+        "case_missed": outcome_counts["MISSED"],        # มาไม่ทันป้าย
+        "case_bus_full": outcome_counts["BUS_FULL"],    # มาทันป้ายแต่รถเต็ม
         # ─ Monitor per-bus (feedback #6) ─
         "bus_stats": bus_stats,
         "total_buses": len(buses),

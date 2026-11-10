@@ -33,6 +33,8 @@ from data.timetable import (
     BUFFER_MIN,
     ARRIVE_BEFORE_MIN,
 )
+from data.graph import GPS_COORDS, MAX_SPEED_KMH, ACCEL_MS2, DECEL_MS2, TRAFFIC_LIGHT
+from optimization.fitness import fitness_breakdown
 
 
 def attach_timetable(schedule, graph):
@@ -44,7 +46,7 @@ def attach_timetable(schedule, graph):
         path = route["path"]
         start_time = float(route.get("startTime", 420))
         cycle_time = float(route.get("cycle_time", max(1, len(path) - 1)))
-        seg_times = _build_segment_times(path, graph, cycle_time)
+        seg_times, _, _ = _build_segment_times(path, graph, cycle_time)  # เวลาคาดหมาย (รวมไฟแดงเฉลี่ย)
 
         timetable = []
         current_time = start_time
@@ -68,22 +70,11 @@ app.add_middleware(
 # Global variables to hold context
 graph, fixed_routes, stops, ctx = setup_environment()
 
-# Attach CS timetable demand so search AND final eval both use real passenger demand
-# (addresses feedback #1,#7 — avoid random-demand bias in live dashboard)
-try:
-    from data.timetable import load_cs_timetable
-    _demands = load_cs_timetable(
-        xlsx_path="data/raw/cs_timetable.xlsx",
-        day_filter=["อังคาร", "พฤหัสบดี"],
-        graph=graph,
-    )
-    _max_t = max(int(d.class_start_time) + 60 for d in _demands) if _demands else ctx.end_time
-    ctx.end_time = max(_max_t, 900)
-    ctx.passenger_demands = _demands
-    ctx.eval_seed = 42
-    print(f"[api] loaded {len(_demands)} CS demand records; sim_window={ctx.end_time} min")
-except Exception as _e:
-    print(f"[api] CS timetable unavailable, falling back to random demand: {_e}")
+# Demand (ตารางเรียน CS จริง) ถูกโหลดใน setup_environment() แล้ว — ชุดเดียวกับ cs_benchmark.py
+if ctx.passenger_demands:
+    print(f"[api] loaded {len(ctx.passenger_demands)} CS demand records; sim_window={ctx.end_time} min")
+else:
+    print("[api] CS timetable unavailable, falling back to random demand")
 
 base_metrics, base_schedule = get_simulation_metrics(fixed_routes, ctx)
 
@@ -114,6 +105,14 @@ class MetricsResponse(BaseModel):
     od_matrix: list = []
     mobility_timeseries: list = []
     data_source: str = "live"
+    # Goal function 3 กรณี: ทันเรียน / มาไม่ทันป้าย / มาทันแต่รถเต็ม
+    case_on_time: int | None = None
+    case_missed: int | None = None
+    case_bus_full: int | None = None
+    baseline_case_on_time: int | None = None
+    baseline_case_missed: int | None = None
+    baseline_case_bus_full: int | None = None
+    fitness_breakdown: dict = {}
 
 # Pre-attach timetable to base schedule
 base_schedule_with_timetable = attach_timetable(base_schedule, ctx.graph)
@@ -125,6 +124,9 @@ def get_baseline():
         "travel_time": base_metrics["avg_travel_time"],
         "served": base_metrics.get("served_passengers", 0),
         "waiting": base_metrics.get("waiting_passengers", 0),
+        "case_on_time": base_metrics.get("case_on_time"),
+        "case_missed": base_metrics.get("case_missed"),
+        "case_bus_full": base_metrics.get("case_bus_full"),
         "schedule": base_schedule_with_timetable
     }
 
@@ -156,6 +158,10 @@ def get_benchmark():
                     "total_passengers": metrics.get("total_passengers"),
                     "fleet_utilization_pct": metrics.get("fleet_utilization_pct"),
                     "bus_stats": metrics.get("bus_stats", []),
+                    "case_on_time": metrics.get("case_on_time"),
+                    "case_missed": metrics.get("case_missed"),
+                    "case_bus_full": metrics.get("case_bus_full"),
+                    "fitness": fitness_breakdown(metrics, sum(r.get("num_bus", 0) for r in sched))["total_cost"],
                     "schedule": sched,
                 }
             except Exception as e:
@@ -195,7 +201,8 @@ def _plan_trip(
     คืน list ของ option ที่เป็นไปได้ เรียงจาก "ขึ้นรถสายที่สุดที่ยังทัน" → "สายน้อยลง"
     """
     options: list[dict] = []
-    deadline_at_dest = class_start - walk - buffer_min - arrive_before
+    # ต้องถึงอาคารก่อนเรียนโดยเผื่อ buffer (ไฟแดง/รถช้า) — arrive_before ใช้บอกว่า "สบาย" หรือไม่
+    deadline_at_dest = class_start - walk - buffer_min
 
     for r_idx, route in enumerate(schedule):
         path = route.get("path", [])
@@ -255,7 +262,7 @@ def _plan_trip(
                 "class_start_minutes": round(class_start, 2),
                 # วินิจฉัย
                 "slack_before_class_minutes": round(slack, 2),
-                "comfortable": slack >= arrive_before,
+                "comfortable": slack >= buffer_min + arrive_before,
                 "trip_duration_minutes": round(bus_at_dest - bus_at_origin, 2),
                 "walk_minutes": round(walk, 2),
                 "buffer_minutes": round(buffer_min, 2),
@@ -314,7 +321,8 @@ def plan_trip(req: TripPlanRequest):
         "class_start_minutes": req.class_start_minutes,
         "options": options,
         "formula_note": (
-            "target_at_stop = class_start − walk − travel − buffer − arrive_before "
+            "ต้องถึงป้ายปลายทางก่อน class_start − walk − buffer; "
+            "comfortable = ถึงอาคารก่อนเรียน ≥ buffer + arrive_before นาที "
             "(อ้างอิง Díaz-Ramírez et al. 2022, §3.2)"
         ),
     }
@@ -330,7 +338,22 @@ def planner_metadata():
         "default_walk_minutes": DEFAULT_WALK_MIN,
         "default_buffer_minutes": BUFFER_MIN,
         "default_arrive_before_minutes": ARRIVE_BEFORE_MIN,
+        # โมเดลเวลาวิ่งรถ: เร่ง → วิ่งไม่เกิน MAX_SPEED → เบรก + ไฟจราจร 1 จุด
+        "travel_model": {
+            "max_speed_kmh": MAX_SPEED_KMH,
+            "accel_ms2": ACCEL_MS2,
+            "decel_ms2": DECEL_MS2,
+            "traffic_light": {**TRAFFIC_LIGHT, **_traffic_light_coords()},
+        },
     }
+
+
+def _traffic_light_coords() -> dict:
+    """พิกัดไฟจราจร — ประมาณจากตำแหน่งสัดส่วนบนเส้นตรงระหว่างสองป้าย"""
+    a, b = TRAFFIC_LIGHT["edge"]
+    (lon1, lat1), (lon2, lat2) = GPS_COORDS[a], GPS_COORDS[b]
+    f = TRAFFIC_LIGHT["position"]
+    return {"lon": lon1 + (lon2 - lon1) * f, "lat": lat1 + (lat2 - lat1) * f}
 
 
 @app.post("/api/run/{algorithm}", response_model=MetricsResponse)
@@ -399,6 +422,15 @@ def run_algorithm(algorithm: str):
             od_matrix=opt_metrics.get("od_matrix", []),
             mobility_timeseries=opt_metrics.get("mobility_timeseries", []),
             data_source="live",
+            case_on_time=opt_metrics.get("case_on_time"),
+            case_missed=opt_metrics.get("case_missed"),
+            case_bus_full=opt_metrics.get("case_bus_full"),
+            baseline_case_on_time=base_metrics.get("case_on_time"),
+            baseline_case_missed=base_metrics.get("case_missed"),
+            baseline_case_bus_full=base_metrics.get("case_bus_full"),
+            fitness_breakdown=fitness_breakdown(
+                opt_metrics, sum(r.get("num_bus", 0) for r in final_schedule)
+            ),
         )
     except Exception as e:
         print(traceback.format_exc())

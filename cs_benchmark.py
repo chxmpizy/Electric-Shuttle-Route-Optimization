@@ -14,16 +14,18 @@ cs_benchmark.py
 
 รัน: python cs_benchmark.py
 """
-import sys, os, time, json, random, copy, platform
+import sys, os, time, json, random, copy, platform, statistics
 sys.path.insert(0, "src")
 
 from pathlib import Path
 from data.timetable import load_cs_periods_csv, summarize_demands
-from data.graph import build_graph, make_bidirectional
+from data.graph import (build_graph, make_bidirectional,
+                        MAX_SPEED_KMH, ACCEL_MS2, DECEL_MS2, TRAFFIC_LIGHT)
 from data.routes import build_fixed_routes, get_all_stops, HUB_STOPS
 from optimization.context import RouteContext
 from optimization.fitness import fitness, fitness_breakdown
 from optimization.evaluator import evaluate
+from optimization.chromosome import enforce_fleet_limit
 from simulation.engine import run_simulation
 
 # Algorithms
@@ -33,19 +35,21 @@ from algorithms.PSO import run_pso
 from algorithms.ACO import run_aco
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-SEEDS = [42, 123, 456]         # 3 seeds → รันแต่ละ algorithm 3 รอบ
+SEEDS = [42, 123, 456, 789, 1011, 1213, 1415, 1617, 1819, 2021]  # 10 seeds → รันแต่ละ algorithm 10 รอบ
 GA_GENS = 15
 SA_ITERS = 200
 PSO_ITERS = 30
 ACO_ITERS = 20
 
-OUTPUT_FILE = "cs_benchmark_result_v2.json"
+OUTPUT_FILE = "cs_benchmark_result_v3.json"
 DEMAND_DAYS = ["อังคาร", "พฤหัสบดี"]
+DEMAND_TERMS = [1]             # ใช้เทอมเดียว — เทอม 1 กับ 2 ไม่ได้เรียนพร้อมกัน
+STUDENTS_PER_YEAR = 70         # นักศึกษาต่อชั้นปี (ต่อภาค ปกติ/พิเศษ)
 
-print("=" * 70)
+print("=" * 90)
 print("  UniFlow EV — CS Department Algorithm Benchmark")
 print("  อ้างอิงวิธีเปรียบเทียบ: Díaz-Ramírez et al. (2022)")
-print("=" * 70)
+print("=" * 90)
 
 # ─── 1. เตรียมสภาพแวดล้อม ──────────────────────────────────────────────────
 print("\n[1] เตรียม Graph + Routes + Demand ...")
@@ -57,9 +61,9 @@ demands = load_cs_periods_csv(
     normal_csv="data/processed/CS/normal/periods.csv",
     special_csv="data/processed/CS/special/periods.csv",
     day_filter=DEMAND_DAYS,
+    term_filter=DEMAND_TERMS,
     graph=graph,
-    limited_section_size=50,
-    general_section_size=120,
+    students_per_year=STUDENTS_PER_YEAR,
 )
 stats = summarize_demands(demands)
 max_t = max(int(d.class_start_time) + 60 for d in demands)
@@ -88,6 +92,7 @@ print(f"  Seeds        : {SEEDS}")
 # ─── Helper: รัน simulation บน chromosome แล้วดึงสถิติ ──────────────────────
 def eval_full(chromosome: list[dict]) -> dict:
     """ประเมิน chromosome และคืนผลลัพธ์ละเอียด"""
+    enforce_fleet_limit(chromosome, ctx)
     active = [{
         "path": g["path"], "num_bus": g["num_bus"],
         "cycle_time": g["cycle_time"], "headway": g["headway"],
@@ -99,7 +104,8 @@ def eval_full(chromosome: list[dict]) -> dict:
         simulation_time=sim_time,
         passenger_demands=demands, graph=graph, seed=42,
     )
-    score = fitness(result, total_buses=total_buses)
+    # ใช้ evaluate() เดียวกับตอนค้นหา (fitness + structural penalties) ให้คะแนนเทียบกันได้ตรง ๆ
+    score = evaluate(chromosome, ctx)
     bd = fitness_breakdown(result, total_buses=total_buses)
     bus_stats = result.get("bus_stats", [])
     fleet_util = result.get("fleet_utilization_pct", 0.0)
@@ -114,6 +120,9 @@ def eval_full(chromosome: list[dict]) -> dict:
         "served": result["served_passengers"],
         "stranded": result["stranded_passengers"],
         "late": result["late_passengers"],
+        "case_on_time": result["case_on_time"],
+        "case_missed": result["case_missed"],
+        "case_bus_full": result["case_bus_full"],
         "breakdown": bd,
         # Feedback #6: per-bus utilization
         "fleet_utilization_pct": fleet_util,
@@ -169,6 +178,9 @@ for algo_name, runner in algo_configs:
             "served": full_res["served"],
             "stranded": full_res["stranded"],
             "late": full_res["late"],
+            "case_on_time": full_res["case_on_time"],
+            "case_missed": full_res["case_missed"],
+            "case_bus_full": full_res["case_bus_full"],
             "avg_wait": full_res["avg_wait"],
             "avg_travel": full_res["avg_travel"],
             "avg_delay": full_res["avg_delay"],
@@ -181,7 +193,7 @@ for algo_name, runner in algo_configs:
         all_histories.append(history)
         print(f"    Seed={s} | Score={full_res['score']:.4f} "
               f"| On-time={full_res['on_time_pct']:.1f}% "
-              f"| Stranded={full_res['stranded']} "
+              f"| Missed={full_res['case_missed']} BusFull={full_res['case_bus_full']} "
               f"| Delay={full_res['avg_delay']:.1f}m "
               f"| {elapsed:.1f}s")
 
@@ -194,6 +206,8 @@ for algo_name, runner in algo_configs:
         "best_score": round(min(scores), 4),
         "worst_score": round(max(scores), 4),
         "mean_on_time_pct": round(sum(on_times)/len(on_times), 2),
+        "std_score": round(statistics.stdev(scores), 4) if len(scores) > 1 else 0.0,
+        "std_on_time_pct": round(statistics.stdev(on_times), 2) if len(on_times) > 1 else 0.0,
     }
     print(f"    → Mean={results[algo_name]['mean_score']:.4f} "
           f"Best={results[algo_name]['best_score']:.4f} "
@@ -202,38 +216,43 @@ for algo_name, runner in algo_configs:
 
 # ─── 4. สรุปตารางเปรียบเทียบ ─────────────────────────────────────────────────
 print("\n" + "=" * 70)
-print("  📊 SUMMARY TABLE")
-print("=" * 70)
-header = f"{'Algorithm':<10} {'Score(best)':<13} {'Score(mean)':<13} {'On-Time%':<10} {'Stranded':<10} {'Delay(m)':<10} {'Buses':<7}"
+print("  SUMMARY TABLE")
+print("=" * 90)
+header = (f"{'Algorithm':<10} {'Score(best)':<13} {'Score(mean)':<13} {'On-Time%':<10} "
+          f"{'Missed':<8} {'BusFull':<8} {'Stranded':<10} {'Delay(m)':<10} {'Buses':<7}")
 print(header)
-print("-" * 70)
+print("-" * 90)
 
 # Baseline
 b = results["baseline"]
 print(f"{'Baseline':<10} {b['score']:<13.4f} {b['score']:<13.4f} "
-      f"{b['on_time_pct']:<10.1f} {b['stranded']:<10} "
+      f"{b['on_time_pct']:<10.1f} {b['case_missed']:<8} {b['case_bus_full']:<8} {b['stranded']:<10} "
       f"{b['avg_delay']:<10.1f} {b['total_buses']:<7}")
 
 for algo in ["GA", "SA", "PSO", "ACO"]:
     r = results[algo]
     best_seed = min(r["seeds"], key=lambda x: x["score"])
     print(f"{algo:<10} {r['best_score']:<13.4f} {r['mean_score']:<13.4f} "
-          f"{r['mean_on_time_pct']:<10.1f} {best_seed['stranded']:<10} "
+          f"{r['mean_on_time_pct']:<10.1f} {best_seed['case_missed']:<8} "
+          f"{best_seed['case_bus_full']:<8} {best_seed['stranded']:<10} "
           f"{best_seed['avg_delay']:<10.1f} {best_seed['total_buses']:<7}")
 
 # ─── 5. บันทึกผล ─────────────────────────────────────────────────────────────
 output = {
     "metadata": {
-        "dataset": f"CS Department Timetable — normal+special, days={DEMAND_DAYS}, all years",
+        "dataset": (f"CS Department Timetable — normal+special, days={DEMAND_DAYS}, "
+                    f"terms={DEMAND_TERMS}, all years, {STUDENTS_PER_YEAR} students/year"),
         "source_csv": {
             "normal": "data/processed/CS/normal/periods.csv",
             "special": "data/processed/CS/special/periods.csv",
         },
-        "fitness_weights": {"W_WAIT": 0.30, "W_TRAVEL": 0.00, "W_DELAY": 0.70,
-                            "PENALTY_UNSERVED": 60.0, "FLEET_COST": 0.0},
+        "fitness_weights": {"W_MISSED": 40.0, "W_BUS_FULL": 60.0, "W_WAIT": 0.30,
+                            "W_TRAVEL": 0.00, "W_DELAY": 0.70, "FLEET_COST": 0.0},
         "total_passengers": stats["total_passengers"],
-        "limited_size": 50,
-        "general_size": 120,
+        "students_per_year": STUDENTS_PER_YEAR,
+        "terms": DEMAND_TERMS,
+        "travel_time_model": {"max_speed_kmh": MAX_SPEED_KMH, "accel_ms2": ACCEL_MS2,
+                              "decel_ms2": DECEL_MS2, "traffic_light": TRAFFIC_LIGHT},
         "sim_window_min": sim_time,
         "seeds": SEEDS,
         "reference": "Díaz-Ramírez et al. (2022) doi:10.1016/j.cie.2022.108101",
@@ -258,4 +277,4 @@ output = {
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
 print(f"\n  บันทึกผลทั้งหมดไว้ที่: {OUTPUT_FILE}")
-print("=" * 70)
+print("=" * 90)

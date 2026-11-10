@@ -9,6 +9,9 @@ interface MobilityPanelProps {
   latePassengers?: number | null;
   strandedPassengers?: number | null;
   totalPassengers?: number | null;
+  caseOnTime?: number | null;
+  caseMissed?: number | null;
+  caseBusFull?: number | null;
   totalBuses?: number | null;
   fleetUtilPct?: number | null;
   odMatrix?: ODEntry[];
@@ -29,6 +32,9 @@ export default function MobilityPanel({
   latePassengers,
   strandedPassengers,
   totalPassengers,
+  caseOnTime,
+  caseMissed,
+  caseBusFull,
   totalBuses,
   fleetUtilPct,
   odMatrix = [],
@@ -44,6 +50,12 @@ export default function MobilityPanel({
       ? Math.round(((total - stranded - late) * onTimeRatePct) / 100)
       : Math.max(0, total - stranded - late);
   const uncountedServed = Math.max(0, total - stranded - late - onTimeCount);
+
+  // Goal function 3 กรณี (มีเมื่อ API ส่งมา — demo data ไม่มี)
+  const hasCases =
+    typeof caseOnTime === "number" &&
+    typeof caseMissed === "number" &&
+    typeof caseBusFull === "number";
 
   const sortedBuses = useMemo(
     () => [...busStats].sort((a, b) => b.utilization_pct - a.utilization_pct),
@@ -102,18 +114,37 @@ export default function MobilityPanel({
             hint="เข้าเรียนก่อนเวลา"
             dot="emerald"
           />
-          <StatCell
-            label="สาย"
-            value={late.toString()}
-            hint="ถึงหลังเวลาเรียน"
-            dot="amber"
-          />
-          <StatCell
-            label="ตกค้าง"
-            value={stranded.toString()}
-            hint="ยังรอ + ค้างบนรถ"
-            dot="red"
-          />
+          {hasCases ? (
+            <>
+              <StatCell
+                label="มาไม่ทันป้าย"
+                value={caseMissed.toString()}
+                hint="รถรอบที่ทันเรียนออกไปแล้ว"
+                dot="amber"
+              />
+              <StatCell
+                label="รถเต็ม"
+                value={caseBusFull.toString()}
+                hint="มาทันป้ายแต่ขึ้นรถไม่ได้"
+                dot="red"
+              />
+            </>
+          ) : (
+            <>
+              <StatCell
+                label="สาย"
+                value={late.toString()}
+                hint="ถึงหลังเวลาเรียน"
+                dot="amber"
+              />
+              <StatCell
+                label="ตกค้าง"
+                value={stranded.toString()}
+                hint="ยังรอ + ค้างบนรถ"
+                dot="red"
+              />
+            </>
+          )}
           <StatCell
             label="Fleet util"
             value={typeof fleetUtilPct === "number" ? `${fleetUtilPct.toFixed(1)}%` : "—"}
@@ -131,9 +162,25 @@ export default function MobilityPanel({
               สัดส่วนผู้โดยสาร
             </h3>
             <p className="text-[12px] text-neutral-500 mt-0.5">
-              แยกตามสถานะการเดินทางเมื่อสิ้นสุดการจำลอง
+              {hasCases
+                ? "แยกตาม 3 กรณีของ goal function — ใช้คำนวณคะแนน fitness"
+                : "แยกตามสถานะการเดินทางเมื่อสิ้นสุดการจำลอง"}
             </p>
           </div>
+          {hasCases ? (
+            <div className="px-6 py-5">
+              <div className="h-6 w-full rounded-lg overflow-hidden flex border border-neutral-200 bg-neutral-50">
+                <SegBar count={caseOnTime} total={total} color="bg-emerald-500" />
+                <SegBar count={caseMissed} total={total} color="bg-amber-500" />
+                <SegBar count={caseBusFull} total={total} color="bg-red-400" />
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[12px]">
+                <LegendItem swatch="bg-emerald-500" label="มาทันป้ายและขึ้นรถทัน" count={caseOnTime} />
+                <LegendItem swatch="bg-amber-500" label="มาไม่ทันป้าย" count={caseMissed} />
+                <LegendItem swatch="bg-red-400" label="มาทันป้ายแต่รถเต็ม" count={caseBusFull} />
+              </div>
+            </div>
+          ) : (
           <div className="px-6 py-5">
             <div className="h-6 w-full rounded-lg overflow-hidden flex border border-neutral-200 bg-neutral-50">
               <SegBar count={onTimeCount} total={total} color="bg-emerald-500" />
@@ -154,6 +201,7 @@ export default function MobilityPanel({
               <LegendItem swatch="bg-red-400" label="ตกค้าง" count={stranded} />
             </div>
           </div>
+          )}
         </section>
       )}
 

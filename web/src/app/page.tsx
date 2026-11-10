@@ -428,6 +428,12 @@ export default function Home() {
               {typeof results.on_time_rate_pct === "number" && (
                 <Metric label="On-time" value={`${results.on_time_rate_pct.toFixed(1)}%`} />
               )}
+              {results.fitness_breakdown && (
+                <Metric label="Fitness" value={results.fitness_breakdown.total_cost.toFixed(2)} />
+              )}
+              {typeof results.case_bus_full === "number" && (
+                <Metric label="รถเต็ม" value={`${results.case_bus_full}`} />
+              )}
               {typeof results.fleet_utilization_pct === "number" && (
                 <Metric label="Fleet util" value={`${results.fleet_utilization_pct.toFixed(1)}%`} />
               )}
@@ -517,6 +523,9 @@ export default function Home() {
               latePassengers={results?.late_passengers}
               strandedPassengers={results?.stranded_passengers}
               totalPassengers={results?.total_passengers}
+              caseOnTime={results?.case_on_time}
+              caseMissed={results?.case_missed}
+              caseBusFull={results?.case_bus_full}
               totalBuses={results?.total_buses}
               fleetUtilPct={results?.fleet_utilization_pct}
               odMatrix={results?.od_matrix ?? []}

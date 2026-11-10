@@ -136,7 +136,7 @@ def main():
 
     # ─── Summary table ─────────────────────────────────────────────────────
     print("\n" + "=" * 90)
-    print("  📊 SUMMARY: น้ำหนักต่างๆ ส่งผลต่อคำตอบที่ค้นเจออย่างไร")
+    print("  SUMMARY: น้ำหนักต่างๆ ส่งผลต่อคำตอบที่ค้นเจออย่างไร")
     print("=" * 90)
     print(f"{'Config':<20} {'On-Time%':<10} {'Stranded':<10} {'Delay(m)':<10} "
           f"{'Wait(m)':<10} {'Buses':<7} {'Score':<10}")
@@ -155,7 +155,8 @@ def main():
             "ga_generations": GA_GENS,
             "seed": SEED,
             "fixed_values": {
-                "PENALTY_UNSERVED": fit_mod.PENALTY_UNSERVED,
+                "W_MISSED": fit_mod.W_MISSED,
+                "W_BUS_FULL": fit_mod.W_BUS_FULL,
                 "NORM_WAIT": fit_mod.NORM_WAIT,
                 "NORM_TRAVEL": fit_mod.NORM_TRAVEL,
                 "NORM_DELAY": fit_mod.NORM_DELAY,

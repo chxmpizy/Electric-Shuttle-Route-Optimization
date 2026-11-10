@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 from optimization.context import RouteContext
+from optimization.chromosome import enforce_fleet_limit
 from optimization.fitness import fitness
 from simulation.engine import run_simulation
 
@@ -50,6 +51,9 @@ def evaluate(
         passenger_demands = ctx.passenger_demands
     if seed is None:
         seed = ctx.eval_seed
+
+    # รถรวมห้ามเกิน ctx.total_buses — บังคับจริง ไม่ใช่แค่โทษ (ใช้กับทุก algorithm)
+    enforce_fleet_limit(chromosome, ctx)
 
     active_routes = [
         {

@@ -295,7 +295,7 @@ def slide3_demand(prs):
 
     # Right column: dataset cards
     add_card(s, Inches(7.0), Inches(2.1), Inches(5.6), Inches(2.1),
-             "ชุด Pilot (ใช้งานแล้ว ✅)",
+             "ชุด Pilot (ใช้งานแล้ว)",
              [
                  "400 คน × 2 วัน",
                  "วิชา: CS100 · CS211 · CS212 · CS213",
@@ -304,7 +304,7 @@ def slide3_demand(prs):
              ], header_color=COLOR_ACCENT)
 
     add_card(s, Inches(7.0), Inches(4.4), Inches(5.6), Inches(2.3),
-             "ชุด Full-Scale (กำลังทดสอบ ⚠️)",
+             "ชุด Full-Scale (กำลังทดสอบ)",
              [
                  "16,050 คน",
                  "แยก: จำกัดเซค 5,850 + ทั่วไป 10,200",
@@ -362,10 +362,10 @@ def slide4_punctuality(prs):
     add_card(s, Inches(6.85), Inches(4.1), Inches(5.75), Inches(2.6),
              "ตอบคำถามอาจารย์ได้ครบ",
              [
-                 "✓ ทันกี่คน  (is_on_time == True)",
-                 "✓ สายกี่คน  (delay_minutes > 0)",
-                 "✓ สายเฉลี่ยกี่นาที  (avg_delay)",
-                 "✓ ตกค้างกี่คน  (unserved count)",
+                 "• ทันกี่คน  (is_on_time == True)",
+                 "• สายกี่คน  (delay_minutes > 0)",
+                 "• สายเฉลี่ยกี่นาที  (avg_delay)",
+                 "• ตกค้างกี่คน  (unserved count)",
                  "ARRIVE_BEFORE = 10′ (Comfort Early Bound)",
              ], header_color=COLOR_ACCENT)
 
@@ -597,7 +597,7 @@ def slide9_results(prs):
 
     # Left: Pilot (success)
     add_card(s, Inches(0.8), Inches(2.1), Inches(5.9), Inches(3.0),
-             "✅  CS Pilot — 400 คน",
+             "CS Pilot — 400 คน",
              [
                  "Baseline on-time:  53.0%",
                  "GA (best):  on-time 100% (seed 123)",
@@ -608,7 +608,7 @@ def slide9_results(prs):
 
     # Right: Full-scale (issues)
     add_card(s, Inches(6.85), Inches(2.1), Inches(5.75), Inches(3.0),
-             "⚠️  CS Full-Scale — 16,050 คน (กำลังรัน)",
+             "CS Full-Scale — 16,050 คน (กำลังรัน)",
              [
                  "Baseline on-time:  5.2%  ·  Stranded 5,360",
                  "GA 3 seeds score เท่ากันเป๊ะ (7.62)",
@@ -630,7 +630,7 @@ def slide9_results(prs):
     tf.margin_left = tf.margin_top = 0
     tf.word_wrap = True
     lines = [
-        ("🚩  Key Insights จาก Full-Scale Run:", True, COLOR_WARN, 14),
+        ("Key Insights จาก Full-Scale Run:", True, COLOR_WARN, 14),
         ("•  Fleet 30 คัน ไม่พอ กับ demand 16k → ต้องตีความ Feedback #6 ใหม่: หา trade-off ไม่ใช่ลดอย่างเดียว", False, COLOR_TEXT, 12),
         ("•  GA 3 seeds ให้ score เท่ากันเป๊ะ → ติด local optimum → ต้องเพิ่ม generations 15 → 50+", False, COLOR_TEXT, 12),
     ]
@@ -653,7 +653,7 @@ def slide10_next(prs):
 
     # Left: next steps
     add_card(s, Inches(0.8), Inches(2.1), Inches(6.1), Inches(4.6),
-             "📅  Next 3 Weeks",
+             "Next 3 Weeks",
              [
                  "สัปดาห์ 1  —  เพิ่ม GA/SA/PSO budget",
                  "          รัน full-scale benchmark ซ้ำ",
@@ -670,7 +670,7 @@ def slide10_next(prs):
 
     # Right: questions
     add_card(s, Inches(7.0), Inches(2.1), Inches(5.6), Inches(4.6),
-             "❓  ขอคำแนะนำอาจารย์",
+             "ขอคำแนะนำอาจารย์",
              [
                  "1.  Fleet 30 คันเป็น “เพดานงบ” จริง",
                  "    หรือเพิ่มได้ตามความจำเป็น?",

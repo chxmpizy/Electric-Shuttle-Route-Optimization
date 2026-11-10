@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { CAMPUS_STOPS } from "@/types/shuttle";
+import { CAMPUS_STOPS, TravelModel } from "@/types/shuttle";
 
 interface TripOption {
   route_index: number;
@@ -41,6 +41,7 @@ interface PlannerMetadata {
   default_walk_minutes: number;
   default_buffer_minutes: number;
   default_arrive_before_minutes: number;
+  travel_model?: TravelModel;
 }
 
 const formatHHMM = (minutes: number) => {
@@ -148,6 +149,18 @@ export default function TripPlanner({
           อ้างอิง Díaz-Ramírez et al. (2022) §3.2 — ระบบใช้ค่า default ของเวลาเดิน,
           buffer, และ arrive-before ให้โดยอัตโนมัติ
         </p>
+        {metadata?.travel_model && (
+          <p className="text-[11px] text-neutral-500 mt-1">
+            เวลาวิ่งรถ: เร่งออกจากป้าย → วิ่งไม่เกิน{" "}
+            {metadata.travel_model.max_speed_kmh} กม./ชม. → เบรกเข้าป้าย · มีสัญญาณไฟจราจร
+            1 จุดระหว่าง {stopShort(metadata.travel_model.traffic_light.edge[0])} –{" "}
+            {stopShort(metadata.travel_model.traffic_light.edge[1])} (เขียว{" "}
+            {metadata.travel_model.traffic_light.green_sec} / เหลือง{" "}
+            {metadata.travel_model.traffic_light.yellow_sec} / แดง{" "}
+            {metadata.travel_model.traffic_light.red_sec} วินาที) — เวลาที่แสดงเป็นค่าเฉลี่ย
+            เผื่อติดไฟแดงไว้ใน buffer
+          </p>
+        )}
       </section>
 
       {/* ─── Form ──────────────────────────────────────────── */}
@@ -326,12 +339,12 @@ export default function TripPlanner({
               {formatHHMM(
                 bestOption.class_start_minutes -
                   result.walk_minutes -
-                  result.buffer_minutes -
-                  result.arrive_before_minutes
+                  result.buffer_minutes
               )}
             </span>{" "}
-            (รวมเวลาเดิน {result.walk_minutes} + buffer {result.buffer_minutes} +
-            เผื่อ {result.arrive_before_minutes} นาที)
+            (หักเวลาเดิน {result.walk_minutes} + buffer {result.buffer_minutes} นาที) ·
+            &quot;สบาย&quot; = ถึงตึกก่อนเรียนอย่างน้อย{" "}
+            {result.buffer_minutes + result.arrive_before_minutes} นาที
           </div>
         </section>
       )}

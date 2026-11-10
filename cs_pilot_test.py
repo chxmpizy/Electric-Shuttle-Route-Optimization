@@ -103,10 +103,10 @@ print(f"  เวลาเดินทางเฉลี่ย   : {result['avg_t
 print()
 print(f"  ─── ผลเข้าเรียน ──────────────────────────────────────")
 print(f"  มีข้อมูลเวลาเรียน   : {result['passengers_with_class']:>6,} คน")
-print(f"  ✅ เข้าเรียนทัน     : {result['on_time_passengers']:>6,} คน  ({result['on_time_rate_pct']:.1f}%)")
-print(f"  ❌ เข้าเรียนสาย     : {result['late_passengers']:>6,} คน")
-print(f"  ⏱  นาทีสายเฉลี่ย   : {result['avg_delay_minutes']:>6.1f} นาที")
-print(f"  ⏱  สายสูงสุด       : {result['max_delay_minutes']:>6.1f} นาที")
+print(f"  เข้าเรียนทัน        : {result['on_time_passengers']:>6,} คน  ({result['on_time_rate_pct']:.1f}%)")
+print(f"  เข้าเรียนสาย        : {result['late_passengers']:>6,} คน")
+print(f"  นาทีสายเฉลี่ย       : {result['avg_delay_minutes']:>6.1f} นาที")
+print(f"  สายสูงสุด           : {result['max_delay_minutes']:>6.1f} นาที")
 
 # ─── 6. แสดง Fitness Breakdown ────────────────────────────────────────────────
 total_buses = sum(r.get("num_bus", 5) for r in active_routes)

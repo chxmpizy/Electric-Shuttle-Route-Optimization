@@ -18,7 +18,7 @@ status: completed
 
 ---
 
-## 🏗️ 1. สถาปัตยกรรมภาพรวมของระบบ (End-to-End System Architecture)
+## 1. สถาปัตยกรรมภาพรวมของระบบ (End-to-End System Architecture)
 
 ```mermaid
 flowchart TB
@@ -80,7 +80,7 @@ flowchart TB
 
 ---
 
-## 🧬 2. การออกแบบโครโมโซมและตัวแปรค้นหา (Chromosome Representation)
+## 2. การออกแบบโครโมโซมและตัวแปรค้นหา (Chromosome Representation)
 
 เพื่อให้การเปรียบเทียบระหว่าง **GA, SA, PSO, ACO** เป็นไปอย่างยุติธรรมตามข้อเสนอแนะของอาจารย์ โครงสร้างตัวแปรต้องถูกกำหนดเป็นมาตรฐานเดียวกัน:
 
@@ -106,7 +106,7 @@ flowchart TB
 
 ---
 
-## ⏱️ 3. กลไกการจำลองคิว (Discrete-Event Queue Simulator)
+## 3. กลไกการจำลองคิว (Discrete-Event Queue Simulator)
 
 ### 3.1 การคำนวณเวลาการเคลื่อนที่ระหว่างป้าย (Segment-Based Transit Time)
 ระยะทางจริง $D(u, v)$ ถูกคำนวณด้วยสูตร **Haversine Formula**:
@@ -137,7 +137,7 @@ stateDiagram-v2
 
 ---
 
-## 🎯 4. ฟังก์ชันเป้าหมายแบบพหุวัตถุประสงค์ (Multi-Objective Fitness Formulation)
+## 4. ฟังก์ชันเป้าหมายแบบพหุวัตถุประสงค์ (Multi-Objective Fitness Formulation)
 
 เพื่อแก้ไขปัญหา "คะแนนดีหลอกตา" (False Optimal) ฟังก์ชันเป้าหมายจะรวมทุกมิติของการให้บริการ:
 
@@ -153,7 +153,7 @@ $$\min \mathcal{F} = \alpha_1 \cdot \overline{T}_{\text{wait}} + \alpha_2 \cdot 
 
 ---
 
-## 🚦 5. การจำลองระดับจุลภาคด้วย Eclipse SUMO (Microscopic Traffic Layer)
+## 5. การจำลองระดับจุลภาคด้วย Eclipse SUMO (Microscopic Traffic Layer)
 
 1. **โครงข่ายถนน (Network):** แปลงข้อมูล OpenStreetMap ของมหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต ผ่านคำสั่ง `netconvert` ได้เป็น `thammasat.net.xml`
 2. **ป้ายรถบัส (Bus Stops):** กำหนดตำแหน่งเลนและพิกัดของป้ายหยุดรถบัส 14 ป้ายใน `bus_stops.add.xml`

@@ -100,6 +100,19 @@ def random_chromosome(ctx: RouteContext) -> list[dict]:
             "endTime": end_time,
         })
     return chromosome
+def enforce_fleet_limit(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
+    """
+    บังคับรถรวมไม่เกิน ctx.total_buses (แก้ใน chromosome โดยตรง)
+    ลดทีละคันจากสายที่มีรถมากที่สุด (ไม่ต่ำกว่า min_per_route) แล้วคำนวณ headway ใหม่
+    """
+    while sum(g["num_bus"] for g in chromosome) > ctx.total_buses:
+        reducible = [g for g in chromosome if g["num_bus"] > ctx.min_per_route]
+        if not reducible:
+            break
+        gene = max(reducible, key=lambda g: g["num_bus"])
+        gene["num_bus"] -= 1
+        gene["headway"] = round(gene["cycle_time"] / gene["num_bus"], 2)
+    return chromosome
 def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
     repaired = []
     used_paths: set[tuple] = set()
@@ -144,7 +157,7 @@ def repair(chromosome: list[dict], ctx: RouteContext) -> list[dict]:
             "startTime": ctx.start_time,
             "endTime": ctx.end_time,
         })
-    return repaired[:ctx.num_routes]
+    return enforce_fleet_limit(repaired[:ctx.num_routes], ctx)
 def crossover(parent1: list[dict], parent2: list[dict], ctx: RouteContext) -> list[dict]:
     combined = parent1 + parent2
     random.shuffle(combined)

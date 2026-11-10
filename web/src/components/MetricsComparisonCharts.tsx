@@ -109,6 +109,38 @@ export default function MetricsComparisonCharts({
           strong
         />
       </div>
+
+      {/* ─── Goal function 3 กรณี ───────────────────────── */}
+      {typeof results.baseline_case_on_time === "number" &&
+        typeof results.case_on_time === "number" && (
+          <div className="px-6 py-5 border-t border-neutral-100 space-y-4">
+            <SectionLabel>ผู้โดยสารแยกตาม 3 กรณีของ goal function</SectionLabel>
+            <CaseRow
+              label="Baseline"
+              onTime={results.baseline_case_on_time}
+              missed={results.baseline_case_missed ?? 0}
+              busFull={results.baseline_case_bus_full ?? 0}
+            />
+            <CaseRow
+              label={mode}
+              onTime={results.case_on_time}
+              missed={results.case_missed ?? 0}
+              busFull={results.case_bus_full ?? 0}
+              strong
+            />
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-neutral-600">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />มาทันป้ายและขึ้นรถทัน
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />มาไม่ทันป้าย
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-red-400" />มาทันป้ายแต่รถเต็ม
+              </span>
+            </div>
+          </div>
+        )}
     </section>
   );
 }
@@ -333,4 +365,36 @@ function ThroughputRow({
 function pctChange(base: number, next: number) {
   if (base === 0) return 0;
   return ((next - base) / base) * 100;
+}
+
+function CaseRow({
+  label,
+  onTime,
+  missed,
+  busFull,
+  strong = false,
+}: {
+  label: string;
+  onTime: number;
+  missed: number;
+  busFull: number;
+  strong?: boolean;
+}) {
+  const total = onTime + missed + busFull;
+  const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[12px]">
+        <span className={strong ? "font-semibold text-neutral-900" : "text-neutral-600"}>{label}</span>
+        <span className="text-neutral-500 tabular-nums">
+          ทัน {pct(onTime).toFixed(1)}% · ไม่ทันป้าย {pct(missed).toFixed(1)}% · รถเต็ม {pct(busFull).toFixed(1)}%
+        </span>
+      </div>
+      <div className="h-2.5 w-full rounded-full overflow-hidden flex bg-neutral-100">
+        <div className="bg-emerald-500" style={{ width: `${pct(onTime)}%` }} title={`ทัน: ${onTime}`} />
+        <div className="bg-amber-500" style={{ width: `${pct(missed)}%` }} title={`มาไม่ทันป้าย: ${missed}`} />
+        <div className="bg-red-400" style={{ width: `${pct(busFull)}%` }} title={`รถเต็ม: ${busFull}`} />
+      </div>
+    </div>
+  );
 }

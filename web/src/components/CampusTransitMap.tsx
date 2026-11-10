@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { CAMPUS_STOPS, ROUTE_COLORS, RouteSchedule } from "@/types/shuttle";
+import {
+  CAMPUS_STOPS,
+  ROUTE_COLORS,
+  RouteSchedule,
+  TRAFFIC_LIGHT_EDGE,
+  TRAFFIC_LIGHT_POSITION,
+} from "@/types/shuttle";
 
 interface CampusTransitMapProps {
   baselineSchedule?: RouteSchedule[];
@@ -278,6 +284,23 @@ export default function CampusTransitMap({
                 </g>
               );
             })}
+
+            {/* Traffic light (สัญญาณไฟจราจร 1 จุด) */}
+            {(() => {
+              const a = getCoordinates(TRAFFIC_LIGHT_EDGE[0]);
+              const b = getCoordinates(TRAFFIC_LIGHT_EDGE[1]);
+              const x = a.x + (b.x - a.x) * TRAFFIC_LIGHT_POSITION;
+              const y = a.y + (b.y - a.y) * TRAFFIC_LIGHT_POSITION;
+              return (
+                <g transform={`translate(${x - 5}, ${y - 13})`}>
+                  <title>สัญญาณไฟจราจร (เขียว → เหลือง → แดง)</title>
+                  <rect width="10" height="26" rx="3" fill="#171717" stroke="#525252" />
+                  <circle cx="5" cy="6" r="2.6" fill="#ef4444" />
+                  <circle cx="5" cy="13" r="2.6" fill="#f59e0b" />
+                  <circle cx="5" cy="20" r="2.6" fill="#22c55e" />
+                </g>
+              );
+            })()}
           </svg>
         </div>
 

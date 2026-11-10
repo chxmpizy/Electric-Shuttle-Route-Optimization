@@ -53,7 +53,7 @@ def get_simulation_metrics(chromosome, ctx):
 
 def print_comparison(base_metrics, opt_metrics, algo_name):
     print("\n" + "="*50)
-    print(f"🌟 COMPARISON REPORT: BASELINE vs {algo_name.upper()} 🌟")
+    print(f"COMPARISON REPORT: BASELINE vs {algo_name.upper()}")
     print("="*50)
     
     b_wait = base_metrics["avg_wait_time"]
@@ -70,7 +70,7 @@ def print_comparison(base_metrics, opt_metrics, algo_name):
     print(f"   Baseline:  {b_wait:.2f} mins")
     print(f"   Optimized: {o_wait:.2f} mins")
     print(f"   Change:    {wait_diff:+.2f} mins ({wait_pct:+.1f}%)")
-    if wait_diff < 0: print("   ✅ Passengers wait significantly less!")
+    if wait_diff < 0: print("   Passengers wait significantly less!")
     
     print(f"\n2. Average Travel Time:")
     print(f"   Baseline:  {b_travel:.2f} mins")
@@ -85,7 +85,7 @@ def main():
     parser.add_argument("--mode", choices=["baseline", "ga", "sa", "pso", "aco"], required=True, help="Mode to run")
     args = parser.parse_args()
 
-    print(f"🚀 Initializing Environment for {args.mode.upper()} mode...")
+    print(f"Initializing Environment for {args.mode.upper()} mode...")
     graph, fixed_routes, stops, ctx = setup_environment()
 
     # Always evaluate baseline for comparison
@@ -93,11 +93,11 @@ def main():
     
     if args.mode == "baseline":
         final_schedule = base_schedule
-        print("\n📊 BASELINE METRICS:")
+        print("\nBASELINE METRICS:")
         print(f"Average Wait Time:   {base_metrics['avg_wait_time']:.2f} mins")
         print(f"Average Travel Time: {base_metrics['avg_travel_time']:.2f} mins")
     else:
-        print(f"\n🧠 Running {args.mode.upper()} Algorithm... (This may take a moment)")
+        print(f"\nRunning {args.mode.upper()} Algorithm... (This may take a moment)")
         if args.mode == "ga":
             solution, _, _ = run_ga(ctx, generations=10) # 10 for quick interactive
         elif args.mode == "sa":
@@ -115,7 +115,7 @@ def main():
     with open(json_path, "w") as f:
         json.dump(final_schedule, f, indent=4)
         
-    print(f"\n⚙️ Generating SUMO scenario files for {args.mode}...")
+    print(f"\nGenerating SUMO scenario files for {args.mode}...")
     cmd_gen = [sys.executable, "src/models/generate_real_schedule.py", "--prefix", args.mode, "--input", json_path]
     env = get_sumo_env()
     env["PYTHONPATH"] = str(Path("src").resolve())
@@ -132,12 +132,12 @@ def main():
             except Exception:
                 pass
 
-        print(f"🖥️ Launching SUMO-GUI with {cfg_file}...")
+        print(f"Launching SUMO-GUI with {cfg_file}...")
         sumo_gui_bin = find_sumo_binary("sumo-gui")
         cmd_sumo = [sumo_gui_bin, "-c", cfg_file]
         subprocess.run(cmd_sumo, env=env)
     else:
-        print(f"✅ Files generated successfully for {args.mode}. (GUI skipped)")
+        print(f"Files generated successfully for {args.mode}. (GUI skipped)")
 
 if __name__ == "__main__":
     main()

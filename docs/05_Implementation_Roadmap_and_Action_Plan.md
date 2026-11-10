@@ -18,7 +18,7 @@ status: ready-to-execute
 
 ---
 
-## 📅 1. แผนการดำเนินงานแบ่งตามระยะ (Phase-by-Phase Roadmap)
+## 1. แผนการดำเนินงานแบ่งตามระยะ (Phase-by-Phase Roadmap)
 
 ```mermaid
 gantt
@@ -44,9 +44,9 @@ gantt
 
 ---
 
-## 🛠️ 2. รายละเอียดการแก้ไขโค้ดรายโมดูล (Detailed Code Refactoring Plan)
+## 2. รายละเอียดการแก้ไขโค้ดรายโมดูล (Detailed Code Refactoring Plan)
 
-### 🔹 Phase 1: ปรับปรุง Passenger Data Model และเตรียม Demand จริง
+### Phase 1: ปรับปรุง Passenger Data Model และเตรียม Demand จริง
 - **ไฟล์เป้าหมาย:**
   1. `src/simulation/Passenger.py`
   2. `src/data/timetable.py` (สร้างใหม่)
@@ -98,7 +98,7 @@ class Passenger:
 
 ---
 
-### 🔹 Phase 2: รวมศูนย์เวลาเดินทางและปรับปรุง Simulation Engine
+### Phase 2: รวมศูนย์เวลาเดินทางและปรับปรุง Simulation Engine
 - **ไฟล์เป้าหมาย:** `src/simulation/engine.py` และ `api_server.py`
 
 #### 2.1 กำจัดการหารเฉลี่ยเวลารอบรถ
@@ -139,7 +139,7 @@ def get_segment_travel_time(graph, from_stop, to_stop):
 
 ---
 
-### 🔹 Phase 3: ปรับปรุงฟังก์ชันเป้าหมาย (Multi-Objective Fitness)
+### Phase 3: ปรับปรุงฟังก์ชันเป้าหมาย (Multi-Objective Fitness)
 - **ไฟล์เป้าหมาย:** `src/optimization/fitness.py`
 
 ```python
@@ -177,7 +177,7 @@ def multi_objective_fitness(result: dict, total_buses: int) -> float:
 
 ---
 
-### 🔹 Phase 4: การเปรียบเทียบอัลกอริทึมอย่างเป็นธรรม (Fair Benchmark)
+### Phase 4: การเปรียบเทียบอัลกอริทึมอย่างเป็นธรรม (Fair Benchmark)
 - **ไฟล์เป้าหมาย:** `src/algorithms/` (GA, SA, PSO, ACO) และ `run_benchmark.py`
 
 #### 4.1 ข้อกำหนดการทดลองที่เป็นธรรม
@@ -190,14 +190,14 @@ def multi_objective_fitness(result: dict, total_buses: int) -> float:
 
 ---
 
-### 🔹 Phase 5: การทดลองลดทรัพยากรรถ (Fleet Sizing Trade-off)
+### Phase 5: การทดลองลดทรัพยากรรถ (Fleet Sizing Trade-off)
 - **สคริปต์:** `experiment_fleet_reduction.py`
 - รันการจำลองซ้ำโดยกำหนดเพดานจำนวนรถ $N \in [20, 18, 16, 14, 12, 10, 8]$
 - พล็อต **Pareto Front** แสดงความสัมพันธ์ระหว่าง `Number of Buses` กับ `On-Time Arrival Rate` และ `Average Waiting Time` เพื่อตอบคำถามเรื่องความคุ้มค่าและจุดสมดุล
 
 ---
 
-### 🔹 Phase 6: อัปเกรดแดชบอร์ดและการตรวจสอบผ่าน SUMO
+### Phase 6: อัปเกรดแดชบอร์ดและการตรวจสอบผ่าน SUMO
 - **Frontend (`web/`):**
   - เพิ่มคอมโพเนนต์แสดงผลอัตราการเข้าเรียนทันเวลา (Punctuality Gauge & Chart)
   - เพิ่มแถบแสดงสถานะคิวสะสมในแต่ละนาที (Timeline Queue Length)
@@ -206,16 +206,16 @@ def multi_objective_fitness(result: dict, total_buses: int) -> float:
 
 ---
 
-## ✅ 3. ตารางตรวจสอบความพร้อมของระบบ (Readiness Checklist)
+## 3. ตารางตรวจสอบความพร้อมของระบบ (Readiness Checklist)
 
 | ลำดับ | รายการตรวจสอบ | โมดูลที่เกี่ยวข้อง | เกณฑ์ผ่าน | สถานะ |
 | :---: | :--- | :--- | :--- | :---: |
-| 1 | ข้อมูลนักศึกษามีที่มาที่ไปจากหอพักจริง | `real_data.xlsx`, `timetable.py` | มี O-D Matrix อิงตามสถิติหอพักจริง | ⏳ รอทำ Phase 1 |
-| 2 | Passenger Object บันทึกเวลาเรียนและการเดิน | `Passenger.py` | คำนวณ `delay_minutes` และ `is_on_time` ได้ | ⏳ รอทำ Phase 1 |
-| 3 | เวลาเดินทางระหว่างป้ายอิงจากระยะทางจริง | `engine.py`, `graph.py` | ดึง Edge Weight จาก Graph ไม่หารเฉลี่ย | ⏳ รอทำ Phase 2 |
-| 4 | Fitness Function ลงโทษคนตกค้างและคนสาย | `fitness.py` | ถ้าปล่อยคนตกค้าง คะแนนต้องแย่ลงอย่างมีนัยสำคัญ | ⏳ รอทำ Phase 3 |
-| 5 | Benchmark ทำซ้ำ 5 Runs บน Budget เดียวกัน | `run_benchmark.py` | มี Mean/Std และกราฟการลู่เข้า | ⏳ รอทำ Phase 4 |
-| 6 | มีชุดทดลองนำร่อง CS100 ตรวจสอบได้ง่าย | `test_cs100_pilot.py` | ยืนยันผลเบื้องต้นก่อนรันข้อมูลจริงทั้งระบบ | ⏳ รอทำ Phase 4 |
-| 7 | มีผลการทดลองลดจำนวนรถ (Fleet Reduction) | `fleet_experiment.py` | มีกราฟ Trade-off ระหว่างจำนวนรถกับระดับบริการ | ⏳ รอทำ Phase 5 |
-| 8 | หน้าเว็บแดชบอร์ดแสดงกราฟ Punctuality | `web/src/components/` | มีกราฟแท่ง/โดนัทแสดง สัดส่วน ทัน/สาย | ⏳ รอทำ Phase 6 |
-| 9 | SUMO-GUI รันได้เสถียรบน Mac / XQuartz | `src/models/sumo.py` | รันผ่าน API `/api/simulation/run-sumo` ได้ไม่แครช | 🟢 เสร็จแล้ว |
+| 1 | ข้อมูลนักศึกษามีที่มาที่ไปจากหอพักจริง | `real_data.xlsx`, `timetable.py` | มี O-D Matrix อิงตามสถิติหอพักจริง | รอทำ Phase 1 |
+| 2 | Passenger Object บันทึกเวลาเรียนและการเดิน | `Passenger.py` | คำนวณ `delay_minutes` และ `is_on_time` ได้ | รอทำ Phase 1 |
+| 3 | เวลาเดินทางระหว่างป้ายอิงจากระยะทางจริง | `engine.py`, `graph.py` | ดึง Edge Weight จาก Graph ไม่หารเฉลี่ย | รอทำ Phase 2 |
+| 4 | Fitness Function ลงโทษคนตกค้างและคนสาย | `fitness.py` | ถ้าปล่อยคนตกค้าง คะแนนต้องแย่ลงอย่างมีนัยสำคัญ | รอทำ Phase 3 |
+| 5 | Benchmark ทำซ้ำ 5 Runs บน Budget เดียวกัน | `run_benchmark.py` | มี Mean/Std และกราฟการลู่เข้า | รอทำ Phase 4 |
+| 6 | มีชุดทดลองนำร่อง CS100 ตรวจสอบได้ง่าย | `test_cs100_pilot.py` | ยืนยันผลเบื้องต้นก่อนรันข้อมูลจริงทั้งระบบ | รอทำ Phase 4 |
+| 7 | มีผลการทดลองลดจำนวนรถ (Fleet Reduction) | `fleet_experiment.py` | มีกราฟ Trade-off ระหว่างจำนวนรถกับระดับบริการ | รอทำ Phase 5 |
+| 8 | หน้าเว็บแดชบอร์ดแสดงกราฟ Punctuality | `web/src/components/` | มีกราฟแท่ง/โดนัทแสดง สัดส่วน ทัน/สาย | รอทำ Phase 6 |
+| 9 | SUMO-GUI รันได้เสถียรบน Mac / XQuartz | `src/models/sumo.py` | รันผ่าน API `/api/simulation/run-sumo` ได้ไม่แครช | เสร็จแล้ว |

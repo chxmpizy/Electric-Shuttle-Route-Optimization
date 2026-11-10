@@ -1,19 +1,19 @@
-# 🚌 Electric Shuttle Route Optimization (TU Rangsit)
+# Electric Shuttle Route Optimization (TU Rangsit)
 
 This project optimizes the electric shuttle bus routes and schedules at Thammasat University (Rangsit Campus) using Metaheuristic Algorithms and simulates the results visually using Eclipse SUMO.
 
-## 🌟 Features
+## Features
 * **Metaheuristic Optimization**: Supports GA (Genetic Algorithm), SA (Simulated Annealing), PSO (Particle Swarm Optimization), and ACO (Ant Colony Optimization).
 * **Real GPS Coordinates**: Accurately maps 14 real-world campus stops using Latitude and Longitude.
 * **SUMO 2D Simulation**: Generates fully functioning `.rou.xml` and `.sumocfg` files to visualize exactly 5 buses looping per route continuously.
 * **Modern Web Dashboard**: Built with **Next.js** and **FastAPI** to easily run algorithms, view metric comparisons, and launch SUMO directly from the web!
 
-## ⚙️ Prerequisites
+## Prerequisites
 1. **Python 3.10+**
 2. **Node.js (npm)**
 3. **Eclipse SUMO** (Must be installed and added to your system `PATH`)
 
-## 🛠️ Installation
+## Installation
 
 1. **Clone the repository**
 ```bash
@@ -35,7 +35,7 @@ npm install
 cd ..
 ```
 
-## 🚀 Usage (Web Dashboard)
+## Usage (Web Dashboard)
 
 You need to run both the Python API and the Next.js frontend at the same time.
 
@@ -54,7 +54,7 @@ npm run dev
 
 Finally, open your browser and go to `http://localhost:3000`. You can now run algorithms and click "Open SUMO-GUI" directly from the website!
 
-## 📂 Project Structure
+## Project Structure
 * `web/`: Next.js frontend dashboard.
 * `api_server.py`: FastAPI backend that bridges Python algorithms to Next.js.
 * `src/algorithms/`: Contains the implementation of GA, SA, PSO, and ACO.

@@ -70,6 +70,7 @@ DEFAULT_ORIGIN_STOP = "Dorm"
 GENERAL_COURSE_PREFIXES = ("TU", "EL", "EN", "LA", "SC1", "MA", "PH")
 LIMITED_SECTION_SIZE = 50      # วิชา CS/IT เฉพาะทาง
 GENERAL_SECTION_SIZE = 120     # วิชาทั่วไป (TU100, EL105 ฯลฯ)
+STUDENTS_PER_YEAR = 70         # นักศึกษาต่อชั้นปี (ต่อภาค ปกติ/พิเศษ) — แบ่งเท่า ๆ กันตามจำนวนเซคของวิชา
 
 # ─── Day name → index ────────────────────────────────────────────────────────
 DAY_MAP = {
@@ -304,6 +305,7 @@ def load_cs_periods_csv(
     special_csv: str | Path = "data/processed/CS/special/periods.csv",
     day_filter: Optional[list[str]] = None,
     year_filter: Optional[list[int]] = None,
+    term_filter: Optional[list[int]] = None,
     include_sections: tuple[str, ...] = ("normal", "special"),
     origin_stop: str = DEFAULT_ORIGIN_STOP,
     graph: Optional[nx.DiGraph] = None,
@@ -312,6 +314,7 @@ def load_cs_periods_csv(
     spread_half_min: float = SPREAD_HALF_MIN,
     limited_section_size: int = LIMITED_SECTION_SIZE,
     general_section_size: int = GENERAL_SECTION_SIZE,
+    students_per_year: Optional[int] = None,
 ) -> list[PassengerDemand]:
     """โหลด demand จาก data/processed/CS/{normal,special}/periods.csv ที่ผ่านการ clean แล้ว
 
@@ -319,6 +322,8 @@ def load_cs_periods_csv(
     - กรองตามวัน (เช่น ["อังคาร", "พฤหัสบดี"]) และปี (เช่น [1, 2, 3])
     - ตัดแถวที่ไม่มีเวลาจริง (เช่น "ไม่มีคาบประจำ", "ยังไม่ทราบวันเวลา")
     - สูตรเวลาเหมือน load_cs_timetable() เดิม
+    - students_per_year: ถ้ากำหนด จะใช้แทนขนาดเซค 50/120 — แต่ละชั้นปีมีนักศึกษา N คน
+      แบ่งเท่า ๆ กันตามจำนวนเซคของแต่ละวิชา และตัดคาบซ้ำระหว่างแผน (เช่น ปี 3 SP กับ COOP)
     """
     frames: list[pd.DataFrame] = []
     sources = {
@@ -354,11 +359,28 @@ def load_cs_periods_csv(
         return None
 
     df["_year"] = df["รหัสชุด"].apply(_year_from_code)
+    df["_term"] = pd.to_numeric(
+        df["รหัสชุด"].astype(str).str.extract(r"_Y\dS(\d)_")[0], errors="coerce"
+    )
 
     if day_filter:
         df = df[df["วัน"].isin(day_filter)]
     if year_filter:
         df = df[df["_year"].isin(year_filter)]
+    if term_filter:
+        df = df[df["_term"].isin(term_filter)]
+
+    if students_per_year is not None:
+        # นักศึกษาชั้นปีเดียวกันคือกลุ่มเดียวกัน → คาบเดียวกันที่อยู่หลายแผนนับครั้งเดียว
+        cohort = ["_source", "_year", "_term"]
+        df = df.drop_duplicates(cohort + ["วิชา", "เซค", "วัน", "เริ่ม"])
+        # แบ่ง N คนตามจำนวนเซคของวิชา เศษให้เซคแรก ๆ
+        sec_rank = (df[cohort + ["วิชา", "เซค"]].drop_duplicates()
+                    .assign(_n_sec=lambda x: x.groupby(cohort + ["วิชา"])["เซค"].transform("count"),
+                            _rank=lambda x: x.groupby(cohort + ["วิชา"]).cumcount()))
+        df = df.merge(sec_rank, on=cohort + ["วิชา", "เซค"], how="left")
+        df["_n"] = (students_per_year // df["_n_sec"]
+                    + (df["_rank"] < students_per_year % df["_n_sec"]).astype(int))
 
     demands: list[PassengerDemand] = []
     pid = 0
@@ -378,7 +400,10 @@ def load_cs_periods_csv(
             continue
 
         general = _is_general(course)
-        n_students = general_section_size if general else limited_section_size
+        if students_per_year is not None:
+            n_students = int(row["_n"])
+        else:
+            n_students = general_section_size if general else limited_section_size
         dest_stop = _resolve_stop(building)
         walk_min = WALK_TIME_MIN.get(dest_stop, DEFAULT_WALK_MIN)
         day_idx = DAY_MAP.get(day, 0)

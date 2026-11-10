@@ -64,6 +64,46 @@ export interface SimulationResult {
   od_matrix?: ODEntry[];
   mobility_timeseries?: MobilityPoint[];
   data_source?: "live" | "demo";
+  // Goal function 3 กรณี: ทันเรียน / มาไม่ทันป้าย / มาทันแต่รถเต็ม
+  case_on_time?: number | null;
+  case_missed?: number | null;
+  case_bus_full?: number | null;
+  baseline_case_on_time?: number | null;
+  baseline_case_missed?: number | null;
+  baseline_case_bus_full?: number | null;
+  fitness_breakdown?: FitnessBreakdown;
+}
+
+export interface FitnessBreakdown {
+  missed_component: number;
+  bus_full_component: number;
+  wait_component: number;
+  travel_component: number;
+  delay_component: number;
+  fleet_component: number;
+  total_cost: number;
+  case_on_time_pct: number;
+  case_missed_pct: number;
+  case_bus_full_pct: number;
+  on_time_rate_pct: number;
+}
+
+export interface TrafficLight {
+  edge: [string, string];
+  position: number;
+  green_sec: number;
+  yellow_sec: number;
+  red_sec: number;
+  offset_sec: number;
+  lon: number;
+  lat: number;
+}
+
+export interface TravelModel {
+  max_speed_kmh: number;
+  accel_ms2: number;
+  decel_ms2: number;
+  traffic_light: TrafficLight;
 }
 
 export interface BenchmarkAlgorithmData {
@@ -77,6 +117,10 @@ export interface BenchmarkAlgorithmData {
   total_buses: number;
   avg_headway: number;
   schedule?: RouteSchedule[];
+  case_on_time?: number | null;
+  case_missed?: number | null;
+  case_bus_full?: number | null;
+  fitness?: number | null;
 }
 
 export interface CampusStop {
@@ -232,6 +276,10 @@ export const CAMPUS_STOPS: Record<string, CampusStop> = {
     category: "academic",
   },
 };
+
+// ตำแหน่งสัญญาณไฟจราจร — ให้ตรงกับ TRAFFIC_LIGHT ใน src/data/graph.py
+export const TRAFFIC_LIGHT_EDGE: [string, string] = ["Green", "SC2_SC3"];
+export const TRAFFIC_LIGHT_POSITION = 0.5;
 
 export const ROUTE_COLORS = [
   { stroke: "#2563eb", bg: "bg-blue-600", text: "text-blue-600", border: "border-blue-500", name: "Blue" },

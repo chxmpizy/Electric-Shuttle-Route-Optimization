@@ -57,6 +57,8 @@ def run_pso(
     particles = [Particle(num_routes, ctx) for _ in range(num_particles)]
     global_best = particles[0].position.copy()
     global_best_score = float("inf")
+    # repair() เติมเส้นทางแบบสุ่ม → discretize ซ้ำได้คำตอบไม่เหมือนเดิม จึงเก็บคำตอบที่ประเมินจริงไว้
+    global_best_solution: list[dict] = []
     history: list[float] = []
     v_max_bus = 2
     v_max_time = 30
@@ -70,6 +72,7 @@ def run_pso(
             if score < global_best_score:
                 global_best_score = score
                 global_best = particle.position.copy()
+                global_best_solution = discrete_sol
         for particle in particles:
             for i in range(dim):
                 r1 = random.random()
@@ -94,5 +97,4 @@ def run_pso(
                     )
         history.append(global_best_score)
         print(f"Iter {it} | Best Score: {global_best_score:.3f}")
-    best_solution = discretize(global_best, fixed_routes, ctx)
-    return best_solution, global_best_score, history
+    return global_best_solution, global_best_score, history

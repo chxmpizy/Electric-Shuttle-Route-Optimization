@@ -29,7 +29,8 @@ print("=" * 70)
 graph = make_bidirectional(build_graph())
 stops = get_all_stops()
 fixed_routes = build_fixed_routes(graph)
-demands = load_cs_periods_csv(day_filter=DEMAND_DAYS, graph=graph)
+demands = load_cs_periods_csv(day_filter=DEMAND_DAYS, term_filter=[1], graph=graph,
+                               students_per_year=70)
 stats = summarize_demands(demands)
 max_t = max(int(d.class_start_time) + 60 for d in demands)
 sim_time = max(max_t, 900)
@@ -91,7 +92,7 @@ for cap in FLEET_CONFIGS:
     })
 
 print("\n" + "=" * 70)
-print("  📊 PARETO SUMMARY")
+print("  PARETO SUMMARY")
 print("=" * 70)
 print(f"{'Cap':<5} {'Used':<5} {'On-time%':<10} {'Stranded':<10} {'Delay(m)':<10} {'Wait(m)':<10}")
 print("-" * 70)
@@ -109,8 +110,8 @@ output = {
         "demand_days": DEMAND_DAYS,
         "total_passengers": stats["total_passengers"],
         "sim_window_min": sim_time,
-        "fitness_weights": {"W_WAIT": 0.30, "W_TRAVEL": 0.00, "W_DELAY": 0.70,
-                            "PENALTY_UNSERVED": 60.0, "FLEET_COST": 0.0},
+        "fitness_weights": {"W_MISSED": 40.0, "W_BUS_FULL": 60.0, "W_WAIT": 0.30,
+                            "W_TRAVEL": 0.00, "W_DELAY": 0.70, "FLEET_COST": 0.0},
         "hardware": {
             "platform": platform.platform(),
             "python": platform.python_version(),

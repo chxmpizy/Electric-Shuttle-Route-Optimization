@@ -14,13 +14,13 @@ author:
 advisor: Asst. Prof. Dr. Pokpong Songmuang
 ---
 
-# 🚌 UniFlow EV: Second Brain Knowledge Base
+# UniFlow EV: Second Brain Knowledge Base
 > **Electric Shuttle Route and Fleet Scheduling Optimization for Thammasat University Rangsit Campus**
 > โครงงานพัฒนาระบบวางแผนเส้นทางและจัดตารางเดินรถชัตเติลบัสไฟฟ้า มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต (CS303 Senior Project)
 
 ---
 
-## 📌 แผนที่สารบัญความรู้ (Map of Content - MOC)
+## แผนที่สารบัญความรู้ (Map of Content - MOC)
 
 เอกสารในคลังความรู้นี้ถูกจัดโครงสร้างตามหลักการ **Second Brain (PARA / Linking Your Thinking)** เพื่อให้ติดตามสถานะ ข้อเสนอแนะ สถาปัตยกรรมระบบ และแผนการพัฒนาได้อย่างเป็นระบบและเชื่อมโยงกัน:
 
@@ -39,7 +39,7 @@ graph TD
     Action -.-> Index
 ```
 
-### 🗂️ รายการเอกสารหลัก (Core Notes)
+### รายการเอกสารหลัก (Core Notes)
 
 | หมายเลข | เอกสาร | รายละเอียดสังเขป | สถานะ |
 | :---: | :--- | :--- | :---: |
@@ -54,7 +54,7 @@ graph TD
 
 ---
 
-## 🎯 ภาพรวมและเป้าหมายสำคัญ (Executive Key Takeaway)
+## ภาพรวมและเป้าหมายสำคัญ (Executive Key Takeaway)
 
 > [!IMPORTANT] หัวใจสำคัญของการปรับปรุงระบบรอบนี้
 > ระบบต้องเปลี่ยนผ่านจาก **"การสุ่มความต้องการผู้โดยสารตามโอกาส (Random Generation)"** ไปสู่ **"แบบจำลองความต้องการจริงจากตารางเรียนและหอพัก (Timetable & Dormitory Driven Demand)"** โดยวัดผลความสำเร็จที่:
@@ -64,7 +64,7 @@ graph TD
 
 ---
 
-## 🏷️ Tags & Categories
+## Tags & Categories
 - `#project/uniflow-ev` : บันทึกหลักของโครงงาน
 - `#transit-optimization` : อัลกอริทึมและการหาค่าเหมาะสมของระบบขนส่ง
 - `#simulation/sumo` : การจำลองระดับจุลภาคด้วย Eclipse SUMO

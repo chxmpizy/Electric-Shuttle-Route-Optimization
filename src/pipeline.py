@@ -12,8 +12,14 @@ from config.settings import (
 )
 from data.cleaning import load_routes
 from data.graph import build_graph, make_bidirectional
+from data.timetable import load_cs_periods_csv
 from data.routes import HUB_STOPS, build_fixed_routes, get_all_stops
 from optimization.context import RouteContext
+DEMAND_DAYS = ["อังคาร", "พฤหัสบดี"]
+DEMAND_TERMS = [1]
+STUDENTS_PER_YEAR = 70
+
+
 def setup_environment(seed: int = RANDOM_SEED) -> tuple[nx.DiGraph, list[dict], list[str], RouteContext]:
     """Load data, build graph, and return shared optimization context."""
     random.seed(seed)
@@ -32,4 +38,15 @@ def setup_environment(seed: int = RANDOM_SEED) -> tuple[nx.DiGraph, list[dict], 
         start_time=START_TIME,
         end_time=END_TIME,
     )
+    # Demand ชุดเดียวกับ cs_benchmark.py — ตารางเรียน CS เทอม 1 อังคาร+พฤหัส ชั้นปีละ 70 คน
+    demands = load_cs_periods_csv(
+        day_filter=DEMAND_DAYS,
+        term_filter=DEMAND_TERMS,
+        graph=graph,
+        students_per_year=STUDENTS_PER_YEAR,
+    )
+    if demands:
+        ctx.passenger_demands = demands
+        ctx.end_time = max(max(int(d.class_start_time) + 60 for d in demands), 900)
+        ctx.eval_seed = seed
     return graph, fixed_routes, stops, ctx

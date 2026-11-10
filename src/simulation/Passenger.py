@@ -54,6 +54,7 @@ class Passenger:
         self.wait_time: float = 0.0          # รอที่ป้าย (board_time - arrival_time)
         self.travel_time: float = 0.0        # บนรถ (drop_time - board_time)
         self.total_trip_time: float = 0.0    # รวมทั้งหมด (walk included)
+        self.denied_full_count: int = 0      # จำนวนครั้งที่รถไปปลายทางมาถึงแต่เต็ม ขึ้นไม่ได้
 
     # ─── Lifecycle methods ────────────────────────────────────────────────────
 
@@ -89,6 +90,20 @@ class Passenger:
         self.is_comfortable = (self.building_arrival_time <= comfortable_deadline)
 
     # ─── Convenience properties ───────────────────────────────────────────────
+
+    @property
+    def outcome(self) -> str:
+        """
+        จัดผู้โดยสารเข้า 1 ใน 3 กรณีของ goal function
+            ON_TIME   — มาทันป้ายและขึ้นรถทัน (ถึงอาคารก่อนเริ่มเรียน)
+            BUS_FULL  — มาทันป้ายแต่รถเต็ม ขึ้นไม่ได้ จนสาย/ตกค้าง
+            MISSED    — มาไม่ทันป้าย (รถรอบที่ทันเรียนออกไปก่อน หรือไม่มีรอบที่ทัน)
+        """
+        if self.is_served and self.is_on_time:
+            return "ON_TIME"
+        if self.denied_full_count > 0:
+            return "BUS_FULL"
+        return "MISSED"
 
     @property
     def status(self) -> str:
